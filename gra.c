@@ -5,7 +5,7 @@
 #include <string.h>
 
 enum COL {A, B, C, D, E, F, G, H};
-enum GAME_STATE {NEW_GAME, WHITE_TURN, RED_TURN, WHITE_WIN, RED_WIN}; // Nie wiem, czy się przyda
+enum GAME_STATE {NEW_GAME, WHITE_TURN, RED_TURN, WHITE_WIN, RED_WIN}; // Nie wiem, czy wszystkie się przydadzą
 enum FIELD_STATE {FREE, WHITE_PAWN, WHITE_KING, RED_PAWN, RED_KING}; // Możliwe stany dla każdego z pól
 enum BOOL {FALSE, TRUE}; // W C nie ma boola, więc go dodaję
 
@@ -64,12 +64,12 @@ void new_game(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Rozpocz
 
 enum BOOL move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int from_col, int from_row, int where_col, int where_row) { // TODO: Wymyślić jakim typem danych mają być współrzędne
     //TODO: Przeslac komunikaty o bledzie do klienta
-            // Sprawdzanie, czy pole docelowe jest poprawne
+    // Sprawdzanie czy pole docelowe jest poprawne
     if (where_col < 0 || where_col > 8 || where_row < 1 || where_row > 9) {
         printf("Invalid destination field!\n");
         return FALSE;
     }
-    // Sprawdzanie, czy pole docelowe jest wolne
+    // Sprawdzanie czy pole docelowe jest wolne
     if (board[where_col][where_row] != FREE) {
         printf("Destination field is taken!\n");
         return FALSE;
@@ -128,7 +128,7 @@ enum BOOL move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int from_co
 }
 
 int main() {
-    enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, kolumna 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
+    enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
     enum GAME_STATE state = NEW_GAME; // Aktualny stan gry
     new_game(board, &state);
     print_board(board, state);
