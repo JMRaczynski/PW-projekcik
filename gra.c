@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-enum ROW {A, B, C, D, E, F, G, H};
+enum COL {A, B, C, D, E, F, G, H};
 enum GAME_STATE {NEW_GAME, WHITE_TURN, RED_TURN, WHITE_WIN, RED_WIN}; // Nie wiem, czy się przyda
 enum FIELD_STATE {FREE, WHITE_PAWN, WHITE_KING, RED_PAWN, RED_KING}; // Możliwe stany dla każdego z pól
 enum BOOL {FALSE, TRUE}; // W C nie ma boola, więc go dodaję
