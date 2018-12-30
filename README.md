@@ -12,3 +12,4 @@ Plansza jest przechowywana w tablicy dwuwymiarowej 8x9 pól; rząd numer 0 jest 
 Pierwszy indeks oznacza kolumnę, drugi natomiast wiersz. <br/>
 Kolumny są oznaczane enumem zawierającym kolejne, wielkie litery alfabetu.
 <b>Rzędy numerowane są od 1!</b><br/>
+Póki co gra jest osobnym programem, ponieważ tak jest łatwiej ją testować.
