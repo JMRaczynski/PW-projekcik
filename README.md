@@ -9,5 +9,6 @@ Z góry zastrzegam że program nie jest "idiotoodporny" i może słabo znosić b
 
 <b>GRA</b><br/>
 Plansza jest przechowywana w tablicy dwuwymiarowej 8x9 pól; rząd numer 0 jest pusty, żeby zachować klasyczną numerację pól od 1.<br/>
+Pierwszy indeks oznacza kolumnę, drugi natomiast wiersz. <br/>
+Kolumny są oznaczane enumem zawierającym kolejne, wielkie litery alfabetu.
 <b>Rzędy numerowane są od 1!</b><br/>
-Kolumny są oznaczane enumem zawierającym kolejne litery alfabetu.
