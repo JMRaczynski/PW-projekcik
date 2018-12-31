@@ -31,7 +31,7 @@ enum TYPE get_type(enum FIELD_STATE board[8][9], int col, int row) { // Jakiego 
 
 
 void print_board(enum FIELD_STATE board[8][9], enum GAME_STATE state) {  // Wyswietla aktualny rozkład pionków
-    char board_string[512] = "STAN GRY:\n";
+    char board_string[1500] = "STAN GRY:\n";
     char tmp_string[50];
     switch(state) {
         case NEW_GAME: strcat(board_string, "Nowa gra\n"); break;
@@ -39,30 +39,47 @@ void print_board(enum FIELD_STATE board[8][9], enum GAME_STATE state) {  // Wysw
         case RED_TURN: strcat(board_string, "Tura czerwonych\n"); break;
         default: sprintf(tmp_string, "%d\n", state); strcat(board_string, tmp_string); break;
     }
-    strcat(board_string, "  ");
+    strcat(board_string, "   ");
     for (char row='A'; row<='H'; ++row) {
-        sprintf(tmp_string, "%c ", row);
+        sprintf(tmp_string, "%c   ", row);
         strcat(board_string, tmp_string);
     }
-    strcat(board_string, "\n  ───────────────\n");
+    strcat(board_string, "\n ╔");
+    for (int i=0; i<7; ++i)
+            strcat(board_string, "═══╤");
+    strcat(board_string, "═══╗\n");
     for (int row=1; row<=8; ++row) {
-        sprintf(tmp_string, "%d│", row);
+        sprintf(tmp_string, "%d║", row);
         strcat(board_string, tmp_string);
-        for (int col=A; col<=H; ++col)
-            switch(board[col][row]) {
-                case FREE: strcat(board_string, "  "); break;
-                case WHITE_PAWN: strcat(board_string, "W "); break;
-                case WHITE_KING: strcat(board_string, "M "); break;
-                case RED_PAWN: strcat(board_string, "R "); break;
-                case RED_KING: strcat(board_string, "P "); break;
-                default: sprintf(tmp_string, "%d ", board[col][row]); strcat(board_string, tmp_string); break;
-            }
-         sprintf(tmp_string, "|%d\n", row);
-         strcat(board_string, tmp_string);
+        for (int col=A; col<=H; ++col) {
+                switch(board[col][row]) {
+                    case FREE: strcpy(tmp_string, " "); break;
+                    case WHITE_PAWN: strcpy(tmp_string, "W"); break;
+                    case WHITE_KING: strcpy(tmp_string, "M"); break;
+                    case RED_PAWN: strcpy(tmp_string, "R"); break;
+                    case RED_KING: strcpy(tmp_string, "P"); break;
+                    default: sprintf(tmp_string, "%d", board[col][row]); break;
+                }
+            strcat(board_string, " ");
+            strcat(board_string, tmp_string);
+            if (col != H) strcat(board_string, " │");
+            else strcat(board_string, " ");
+        } 
+        sprintf(tmp_string, "║%d", row);
+        strcat(board_string, tmp_string);
+        if (row != 8) {
+            strcat(board_string, "\n ╟");
+            for (int i=0; i<7; ++i)
+                strcat(board_string, "───┼");
+            strcat(board_string, "───╢\n");
+        }
     }
-    strcat(board_string, "  ───────────────\n  ");
+    strcat(board_string, "\n ╚");
+    for (int i=0; i<7; ++i)
+            strcat(board_string, "═══╧");
+    strcat(board_string, "═══╝\n   ");
     for (char row='A'; row<='H'; ++row) {
-        sprintf(tmp_string, "%c ", row);
+        sprintf(tmp_string, "%c   ", row);
         strcat(board_string, tmp_string);
     }
     strcat(board_string, "\n");
