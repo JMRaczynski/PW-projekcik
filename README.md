@@ -12,11 +12,14 @@ Plansza jest przechowywana w tablicy dwuwymiarowej 8x9 pól; rząd numer 0 jest 
 Pierwszy indeks oznacza kolumnę, drugi natomiast wiersz. <br/>
 Kolumny są oznaczane enumem zawierającym kolejne, wielkie litery alfabetu.<br/>
 <b>Rzędy numerowane są od 1!</b><br/>
-Póki co gra jest osobnym programem, ponieważ tak jest łatwiej ją testować.
+Póki co gra jest osobnym programem, ponieważ tak jest łatwiej ją testować. <br/>
+W wersji testowej pionki przesuwa się wpisując na stdin komendy w postaci "skąd[spacja]dokąd", np."A1 C3".
+
+<br/><p>Warcaby są już w prawie grywalnym stanie, (brakuje przede wszystkim warunku zwycięstwa), jednak nie miałem czasu ich dobrze przetestować, także jakby się komuś nudziło, to zapraszam do testowania. Jeśli komuś udałoby się "zepsuć" grę, to byłbym wdzięczny za podesłanie screena z kilku ostatnich ruchów. :)<sub>PJT</sub></p>
 
 <br/><p>Okazuje się, że nie jest łatwo aż tak nagiąć zasady warcabów, żeby w żaden sposób nie zmuszać gracza do bicia. Chodzi mi tu o serię bić - po zbiciu pionka przeciwnika, 
 jeśli gracz może zbić tym samym pionkiem kolejny, to musi to zrobić. Także zaimplementowałem, nazwijmy to, "słaby" przymus bicia. Polega to na tym, że nie przeglądam wszystkich 
-pionków gracza poszukując tych, które mogą bić, a jedynie sprawdzam, czy podniesiony pionek ma możliwiość bicia. <sub>PJT</sub></p>
+pionków gracza poszukując tych, które mogą bić, a jedynie sprawdzam, czy podniesiony pionek ma możliwiość bicia. (Nie było to jakoś specjalnie skomplikowane) <sub>PJT</sub></p>
 
 <h3>TODO:</h3>
 <ul>
