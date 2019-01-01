@@ -29,6 +29,13 @@ enum TYPE get_type(enum FIELD_STATE board[8][9], int col, int row) { // Jakiego 
     else return KING;
 }
 
+enum BOOL is_enemy(enum FIELD_STATE board[8][9], int col, int row, enum COLOR your_color) { // Czy na podanym polu jest przeciwnik
+    enum COLOR enemy_color = get_color(board, col, row);
+    if (enemy_color != your_color && enemy_color != NO_COLOR)
+        return TRUE;
+    else 
+        return FALSE;
+} 
 
 void print_board(enum FIELD_STATE board[8][9], enum GAME_STATE state) {  // Wyswietla aktualny rozkład pionków
     char board_string[1500] = "STAN GRY:\n";
@@ -110,23 +117,20 @@ enum BOOL can_capture(enum FIELD_STATE board[8][9], int col, int row) { // Spraw
     int enemy_col;
     int enemy_row;
     enum COLOR your_color = get_color(board, col, row);
-    if (your_color == NO_COLOR) // Jeśli gracz wybierze nieodpowiednie pole docelowe, to z powodu takiej, a nie innej kolejności obsługi błędów może tu trafić, więc trzeba go puścić dalej
-        return FALSE;
-    enum COLOR enemy_color = your_color==WHITE ? RED:WHITE; // Wybierz kolor przciwnika
     for (int direction=-1; direction<=1; direction+=2) { // Dla -1 sprawdzamy czy jest bicie po lewej, dla +1 czy jest bicie po prawej
         enemy_col = col + direction;
         enemy_row = row + your_color; // Dla białego rząd w dół, dla czerwonego rząd w górę
         dest_col = col + 2*direction;
         dest_row = row + 2*your_color;
         if (dest_col>=0 && dest_col<=H && dest_row>=1 && dest_row<=8) {
-            if (get_color(board,enemy_col, enemy_row) == enemy_color && board[dest_col][dest_row] == FREE) { // Jeśli na sąsiednim polu jest przeciwnik, a za nim jest wolne miejsce
+            if (is_enemy(board, enemy_col, enemy_row, your_color) && board[dest_col][dest_row] == FREE) { // Jeśli na sąsiednim polu jest przeciwnik, a za nim jest wolne miejsce
                 printf("Za pomoca %c%d mozesz zbic %c%d i wyladowac na %c%d\n", col+65, row, enemy_col+65, enemy_row, dest_col+65, dest_row);
                 return TRUE;
             }
             if (get_type(board, col, row) == KING) { // Jeśli figura jest królem, to może bić w tył
                 enemy_row = row - your_color; // Sprawdzamy opcję przeciwną do tej sprawdzonej dla zwykłego pionka
                 dest_row = row - your_color;
-                if (get_color(board, enemy_col, enemy_row) == enemy_color && board[dest_col][dest_row] == FREE) {
+                if (is_enemy(board, enemy_col, enemy_row, your_color) && board[dest_col][dest_row] == FREE) {
                     printf("Za pomoca %c%d mozesz zbic %c%d i wyladowac na %c%d\n", col+65, row, enemy_col+65, enemy_row, dest_col+65, dest_row);
                     return TRUE;
                 }
@@ -195,10 +199,9 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
         // Analogicznie jak przy zwykłym ruchu, jednak tym razem ruch o 2 pola
         if (where_row-from_row == 2*row_direction || (get_type(board, from_col, from_row) == KING && where_row-from_row == -2*row_direction)) {
             // Sprawdzanie czy po drodze jest przeciwnik
-            int enemy_col_modifier = (where_col > from_col ? 1:-1);
-            int enemy_col = from_col + enemy_col_modifier; // Położenie przeciwnika zależy od tego czy bijemy w prawo, czy w lewo
+            int enemy_col = from_col + (where_col > from_col ? 1:-1); // Położenie przeciwnika zależy od tego czy bijemy w prawo, czy w lewo
             int enemy_row = from_row + row_direction; // Bicie w górę lub w dół zależy od koloru gracza
-            if (get_color(board, enemy_col, enemy_row) != current_player_color) { // Między polem startowym, a docelowym jest przeciwnik
+            if (is_enemy(board, enemy_col, enemy_row, current_player_color)) { // Między polem startowym, a docelowym jest przeciwnik
                 board[where_col][where_row] = board[from_col][from_row];
                 board[from_col][from_row] = FREE;
                 board[enemy_col][enemy_row] = FREE;
@@ -223,8 +226,8 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
                 return NO_ERROR;
             }
             else if (get_type(board, from_col, from_row) == KING) { // Dla króla jeszcze sprawdzenie w przeciwną stronę
-                enemy_col = from_col - enemy_col_modifier;
-                if (get_color(board, enemy_col, enemy_row) != current_player_color) { // Między polem startowym, a docelowym jest przeciwnik
+                enemy_row = from_row - row_direction;
+                if (is_enemy(board, enemy_col, enemy_row, current_player_color)) { // Między polem startowym, a docelowym jest przeciwnik
                     board[where_col][where_row] = board[from_col][from_row];
                     board[from_col][from_row] = FREE;
                     board[enemy_col][enemy_row] = FREE;
@@ -256,15 +259,15 @@ int main() {
     enum MOVE_ERROR move_error_no;
     new_game(board, &state);
     
-    /*state = RED_TURN;
+    state = RED_TURN;
     for (int col=A; col<=H; ++col)
         for (int row=1; row<=8; ++row)
             board[col][row] = FREE;
-    board[F][4] = RED_PAWN;
-    board[E][5] = WHITE_PAWN;
-    board[C][7] = WHITE_PAWN;
+    board[D][2] = WHITE_KING;
+    board[E][3] = RED_PAWN;
+    board[C][7] = RED_PAWN;
     board[H][8] = WHITE_PAWN;
-    board[F][8] = WHITE_PAWN;*/
+    board[F][8] = WHITE_PAWN;
 
     while (1) {
         print_board(board, state);
