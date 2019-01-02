@@ -5,7 +5,7 @@
 #include <string.h>
 
 enum COL {A, B, C, D, E, F, G, H};
-enum GAME_STATE {NEW_GAME, WHITE_TURN, RED_TURN, WHITE_WIN, RED_WIN}; // Nie wiem, czy wszystkie się przydadzą
+enum GAME_STATE {NEW_GAME, WHITE_TURN, RED_TURN, WHITE_WIN, RED_WIN};
 enum FIELD_STATE {FREE, WHITE_PAWN, WHITE_KING, RED_PAWN, RED_KING}; // Możliwe stany dla każdego z pól
 enum MOVE_ERROR {NO_ERROR, ERROR_WRONG_STATE, ERROR_FIELD_INVALID, ERROR_FIELD_TAKEN, ERROR_WRONG_FIGURE, ERROR_FORCE_CAPTURE, ERROR_NO_ENEMY, ERROR_MOVE_INCORRECT};
 enum BOOL {FALSE, TRUE}; // W C nie ma boola, więc go dodaję
@@ -35,15 +35,17 @@ enum BOOL is_enemy(enum FIELD_STATE board[8][9], int col, int row, enum COLOR yo
         return TRUE;
     else 
         return FALSE;
-} 
+}
 
 void print_board(enum FIELD_STATE board[8][9], enum GAME_STATE state) {  // Wyswietla aktualny rozkład pionków
     char board_string[1500] = "STAN GRY:\n";
     char tmp_string[50];
     switch(state) {
-        case NEW_GAME: strcat(board_string, "Nowa gra\n"); break;
-        case WHITE_TURN: strcat(board_string, "Tura bialych\n"); break;
-        case RED_TURN: strcat(board_string, "Tura czerwonych\n"); break;
+        case NEW_GAME:   strcat(board_string, "Nowa gra\n");          break;
+        case WHITE_TURN: strcat(board_string, "Tura bialych\n");      break;
+        case RED_TURN:   strcat(board_string, "Tura czerwonych\n");   break;
+        case WHITE_WIN:  strcat(board_string, "Bialy wygrywa!\n");    break;
+        case RED_WIN:    strcat(board_string, "Czerwony wygrywa!\n"); break;
         default: sprintf(tmp_string, "%d\n", state); strcat(board_string, tmp_string); break;
     }
     strcat(board_string, "   ");
@@ -60,11 +62,11 @@ void print_board(enum FIELD_STATE board[8][9], enum GAME_STATE state) {  // Wysw
         strcat(board_string, tmp_string);
         for (int col=A; col<=H; ++col) {
                 switch(board[col][row]) {
-                    case FREE: strcpy(tmp_string, " "); break;
+                    case FREE:       strcpy(tmp_string, " "); break;
                     case WHITE_PAWN: strcpy(tmp_string, "W"); break;
                     case WHITE_KING: strcpy(tmp_string, "M"); break;
-                    case RED_PAWN: strcpy(tmp_string, "R"); break;
-                    case RED_KING: strcpy(tmp_string, "P"); break;
+                    case RED_PAWN:   strcpy(tmp_string, "R"); break;
+                    case RED_KING:   strcpy(tmp_string, "P"); break;
                     default: sprintf(tmp_string, "%d", board[col][row]); break;
                 }
             strcat(board_string, " ");
@@ -110,7 +112,25 @@ void new_game(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Rozpocz
         
 }
 
-enum BOOL can_capture(enum FIELD_STATE board[8][9], int col, int row) { // Sprawdzanie czy pionek może coś zbić
+enum BOOL can_move(enum FIELD_STATE board[8][9], int col, int row) { // Sprawdzenie czy figura może się poruszyć
+    int row_direction = get_color(board, col, row); // Kolor decyduje o tym, czy pionek może poruszać się w górę czy w dół rzędów
+    for (int col_direction=-1; col_direction<=1; col_direction+=2) { // Sprawdzamy możliwość ruchu w lewo lub w prawo
+        // Sprawdzamy możliwość ruchu odpowiednio w górę albo w dół (z perspektywy piona w przód)
+        if (col+col_direction >= A && col+col_direction <= H) { // Jeśli kolumna docelowa jest poprawna
+            if (row+row_direction>=1 && row+row_direction<=8 && board[col+col_direction][row+row_direction] == FREE) { // Jeśli pole docelowe jest puste
+                return TRUE;
+            }
+            if (row-row_direction>=1 && row-row_direction<=8 && get_type(board, col, row) == KING) { // Jeśli figura jest królem, to sprawdzamy możliwość ruchu w tył
+                if (board[col+col_direction][row-row_direction] == FREE) { // Jeśli pole docelowe jest puste
+                    return TRUE;
+                }
+            }
+        }
+    }
+    return FALSE;
+}
+
+enum BOOL can_capture(enum FIELD_STATE board[8][9], int col, int row) { // Sprawdzanie czy figura może coś zbić
     // Biały pionek może zmniejszyć swój rząd, czerwony może zwiększyć, król może jedno albo drugie
     int dest_col;
     int dest_row;
@@ -251,6 +271,40 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
     else return ERROR_MOVE_INCORRECT;
 }
 
+enum COLOR is_win(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Czy nastąpiło zwycięstwo, zwraca kolor zwycięzcy lub NO_COLOR
+    // Ilość pionków pozostała na planszy i mogą się poruszyć/bić
+    int white_figures = 0;
+    int red_figures = 0;
+    enum COLOR field_color; // Kolor figury na danym polu
+    for (int col=A; col<=H; ++col) {
+        for (int row=1; row<=8; ++row) {
+            field_color = get_color(board, col, row);
+            if (field_color == RED) {
+                if (can_move(board, col, row) || can_capture(board, col, row)) { // Jeśli figura może się poruszyć lub bić
+                    red_figures += 1;
+                }
+            }
+            else if (field_color == WHITE) {
+                if (can_move(board, col, row) || can_capture(board, col, row)) { // Jeśli figura może się poruszyć lub bić
+                    white_figures += 1;
+                }
+            }
+        }
+    }
+    printf("Czerwone: %d, Biale: %d\n", red_figures, white_figures);
+    // Ogłoszenie zwycięzcy
+    if (white_figures == 0) {
+        *state = RED_WIN;
+        return RED;
+    }
+    else if (red_figures == 0) {
+        *state = WHITE_WIN;
+        return WHITE;
+    }
+    else
+        return NO_COLOR;
+}
+
 int main() {
     // !!!Oczywiście, wszystko w main służy tylko do testów i ostatecznie przyjmie inną formę!!!
     enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
@@ -281,16 +335,17 @@ int main() {
             //printf("%c%d %c%d\n", from_col+65, from_row, where_col+65, where_row);
             if ((move_error_no = move(board, &state, last_used_figure, from_col, from_row, where_col, where_row)) != 0) {
                 switch(move_error_no) {
-                    case ERROR_WRONG_STATE: printf("Nieprawidlowy stan gry!\n"); break;
-                    case ERROR_FIELD_INVALID: printf("Nieprawidlowy indeks pola!\n"); break;
-                    case ERROR_FIELD_TAKEN: printf("Pole docelowe zajete!\n"); break;
-                    case ERROR_WRONG_FIGURE: printf("Nie twoja figura!/Nie ma takiej figury!\n"); break;
-                    case ERROR_FORCE_CAPTURE: printf("Masz mozliwe bicie, wiec musisz bic!\n"); break;
-                    case ERROR_NO_ENEMY: printf("Na twojej drodze nie ma przeciwnika!\n"); break;
-                    case ERROR_MOVE_INCORRECT: printf("Nieprawidlowy ruch!\n"); break;
-                    default: printf("Error no. %d", move_error_no); break;
+                    case ERROR_WRONG_STATE:    printf("Nieprawidlowy stan gry!\n");                 break;
+                    case ERROR_FIELD_INVALID:  printf("Nieprawidlowy indeks pola!\n");              break;
+                    case ERROR_FIELD_TAKEN:    printf("Pole docelowe zajete!\n");                   break;
+                    case ERROR_WRONG_FIGURE:   printf("Nie twoja figura!/Nie ma takiej figury!\n"); break;
+                    case ERROR_FORCE_CAPTURE:  printf("Masz mozliwe bicie, wiec musisz bic!\n");    break;
+                    case ERROR_NO_ENEMY:       printf("Na twojej drodze nie ma przeciwnika!\n");    break;
+                    case ERROR_MOVE_INCORRECT: printf("Nieprawidlowy ruch!\n");                     break;
+                    default:                   printf("Error no. %d", move_error_no);               break;
                 }
             }
+            is_win(board, &state);
         }
         else {
             printf("Input error!, Używaj formatu A1<spacja>C2\n");
