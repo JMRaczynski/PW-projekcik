@@ -23,12 +23,12 @@ pionków gracza poszukując tych, które mogą bić, a jedynie sprawdzam, czy po
 
 <h3>TODO:</h3>
 <ul>
-<li>Dodać warunek zwycięstwa</li>
-<li>Podpiąć warcaby pod serwer</li>
-<li>Wprowadzić komunikację gry z klientem</li>
-<li>Poprawić możliwe błędy w ruchu pionków</li>
-<li>Poprawić obsługę błędów</li>
-<li>Dokończyć dokumentację</li>
-<li>???</li>
-<li>Profit :)</li>
+  <li><s>Dodać warunek zwycięstwa</s></li>
+  <li>Podpiąć warcaby pod serwer</li>
+  <li>Wprowadzić komunikację gry z klientem</li>
+  <li>Poprawić możliwe błędy w ruchu pionków</li>
+  <li>Poprawić obsługę błędów</li>
+  <li>Dokończyć dokumentację</li>
+  <li>???</li>
+  <li>Profit :)</li>
 </ul>
