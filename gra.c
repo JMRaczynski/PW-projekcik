@@ -1,16 +1,7 @@
 // board[kolumna][rząd]
 // Kolumna: A,B,C..., jest enum, więc można w kodzie używać literek
 // Rząd: 1,2,3..., UWAGA! w kodzie również numerowane są od 1!
-#include <stdio.h>
-#include <string.h>
-
-enum COL {A, B, C, D, E, F, G, H};
-enum GAME_STATE {NEW_GAME, WHITE_TURN, RED_TURN, WHITE_WIN, RED_WIN};
-enum FIELD_STATE {FREE, WHITE_PAWN, WHITE_KING, RED_PAWN, RED_KING}; // Możliwe stany dla każdego z pól
-enum MOVE_ERROR {NO_ERROR, ERROR_WRONG_STATE, ERROR_FIELD_INVALID, ERROR_FIELD_TAKEN, ERROR_WRONG_FIGURE, ERROR_FORCE_CAPTURE, ERROR_NO_ENEMY, ERROR_MOVE_INCORRECT};
-enum BOOL {FALSE, TRUE}; // W C nie ma boola, więc go dodaję
-enum COLOR {WHITE=-1, NO_COLOR, RED}; // Kolor, pomaga w ustaleniu dozwolonego kierunku ruchu pionka
-enum TYPE {PAWN, KING}; // Typ figury
+#include "gra.h"
 
 int abs(int number) { // Zwraca wartość bezwględną liczby
     if (number < 0)
@@ -37,8 +28,8 @@ enum BOOL is_enemy(enum FIELD_STATE board[8][9], int col, int row, enum COLOR yo
         return FALSE;
 }
 
-void print_board(enum FIELD_STATE board[8][9], enum GAME_STATE state) {  // Wyswietla aktualny rozkład pionków
-    char board_string[1500] = "STAN GRY:\n";
+void generate_board(enum FIELD_STATE board[8][9], enum GAME_STATE state, char *board_string) {  // Generuje podgląd aktualnego rozkładu pionków
+    strcpy(board_string, "STAN GRY:\n");
     char tmp_string[50];
     switch(state) {
         case NEW_GAME:   strcat(board_string, "Nowa gra\n");          break;
@@ -92,7 +83,20 @@ void print_board(enum FIELD_STATE board[8][9], enum GAME_STATE state) {  // Wysw
         strcat(board_string, tmp_string);
     }
     strcat(board_string, "\n");
-    printf("%s\n", board_string);
+}
+
+void generate_error_message(enum MOVE_ERROR move_error_no, char* message) { // Generuj wiadomość o błędzie
+    switch(move_error_no) {
+        case NO_ERROR:             break;
+        case ERROR_WRONG_STATE:    strcpy(message, "Nieprawidlowy stan gry!\n");                 break;
+        case ERROR_FIELD_INVALID:  strcpy(message, "Nieprawidlowy indeks pola!\n");              break;
+        case ERROR_FIELD_TAKEN:    strcpy(message, "Pole docelowe zajete!\n");                   break;
+        case ERROR_WRONG_FIGURE:   strcpy(message, "Nie twoja figura!/Nie ma takiej figury!\n"); break;
+        case ERROR_FORCE_CAPTURE:  strcpy(message, "Masz mozliwe bicie, wiec musisz bic!\n");    break;
+        case ERROR_NO_ENEMY:       strcpy(message, "Na twojej drodze nie ma przeciwnika!\n");    break;
+        case ERROR_MOVE_INCORRECT: strcpy(message, "Nieprawidlowy ruch!\n");                     break;
+        default:                   sprintf(message, "Error no. %d", move_error_no);   break;
+    }
 }
 
 void new_game(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Rozpoczyna nową grę
@@ -144,14 +148,14 @@ enum BOOL can_capture(enum FIELD_STATE board[8][9], int col, int row) { // Spraw
         dest_row = row + 2*your_color;
         if (dest_col>=0 && dest_col<=H && dest_row>=1 && dest_row<=8) {
             if (is_enemy(board, enemy_col, enemy_row, your_color) && board[dest_col][dest_row] == FREE) { // Jeśli na sąsiednim polu jest przeciwnik, a za nim jest wolne miejsce
-                printf("Za pomoca %c%d mozesz zbic %c%d i wyladowac na %c%d\n", col+65, row, enemy_col+65, enemy_row, dest_col+65, dest_row);
+                //printf("Za pomoca %c%d mozesz zbic %c%d i wyladowac na %c%d\n", col+65, row, enemy_col+65, enemy_row, dest_col+65, dest_row);
                 return TRUE;
             }
             if (get_type(board, col, row) == KING) { // Jeśli figura jest królem, to może bić w tył
                 enemy_row = row - your_color; // Sprawdzamy opcję przeciwną do tej sprawdzonej dla zwykłego pionka
                 dest_row = row - your_color;
                 if (is_enemy(board, enemy_col, enemy_row, your_color) && board[dest_col][dest_row] == FREE) {
-                    printf("Za pomoca %c%d mozesz zbic %c%d i wyladowac na %c%d\n", col+65, row, enemy_col+65, enemy_row, dest_col+65, dest_row);
+                    //printf("Za pomoca %c%d mozesz zbic %c%d i wyladowac na %c%d\n", col+65, row, enemy_col+65, enemy_row, dest_col+65, dest_row);
                     return TRUE;
                 }
             }
@@ -160,6 +164,7 @@ enum BOOL can_capture(enum FIELD_STATE board[8][9], int col, int row) { // Spraw
     return FALSE;
 }
 
+// Porusznie figurą
 enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int last_used_figure[3], int from_col, int from_row, int where_col, int where_row) {
     enum COLOR current_player_color;
     // Ustalanie czyja tura teraz trwa
@@ -181,9 +186,9 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
     if (current_player_color != get_color(board, from_col, from_row))
         return ERROR_WRONG_FIGURE;
     // Jeśli w poprzednim ruchu gracz nie skończył serii bicia, musi ją kontynuować
-    if (last_used_figure[0] == TRUE && last_used_figure[1] == from_row && last_used_figure[2] == from_col) {
+    if (last_used_figure[0] == TRUE) {
         // Jeśli gracz próbuje poruszyć się o 2 pola to znaczy, że próbuje coś zbić
-        if (abs(where_col-from_col) == 2)
+        if (last_used_figure[1] == from_col && last_used_figure[2] == from_row && abs(where_col-from_col) == 2)
             last_used_figure[0] = FALSE;
         else
             return ERROR_FORCE_CAPTURE;
@@ -270,7 +275,7 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
     }
     else return ERROR_MOVE_INCORRECT;
 }
-
+  //TODO: Co jeśli obaj gracze się zablokują
 enum COLOR is_win(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Czy nastąpiło zwycięstwo, zwraca kolor zwycięzcy lub NO_COLOR
     // Ilość pionków pozostała na planszy i mogą się poruszyć/bić
     int white_figures = 0;
@@ -291,7 +296,7 @@ enum COLOR is_win(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Czy
             }
         }
     }
-    printf("Czerwone: %d, Biale: %d\n", red_figures, white_figures);
+    //printf("Czerwone: %d, Biale: %d\n", red_figures, white_figures);
     // Ogłoszenie zwycięzcy
     if (white_figures == 0) {
         *state = RED_WIN;
@@ -305,26 +310,27 @@ enum COLOR is_win(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Czy
         return NO_COLOR;
 }
 
-int main() {
+void test() {
     // !!!Oczywiście, wszystko w main służy tylko do testów i ostatecznie przyjmie inną formę!!!
     enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
     enum GAME_STATE state = NEW_GAME; // Aktualny stan gry
     int last_used_figure[3] = {0, 0, 0}; // Czy ostatio użyta figura musi być znowu użyta i gdzie znajduje się ona znajduje: przymus, kolumna, rząd
-    enum MOVE_ERROR move_error_no;
+    enum MOVE_ERROR move_error_no = 0;
+    char board_string[1500];
+    char error_message[50];
     new_game(board, &state);
-    
+    /*
     state = RED_TURN;
     for (int col=A; col<=H; ++col)
         for (int row=1; row<=8; ++row)
             board[col][row] = FREE;
-    board[D][2] = WHITE_KING;
-    board[E][3] = RED_PAWN;
-    board[C][7] = RED_PAWN;
-    board[H][8] = WHITE_PAWN;
-    board[F][8] = WHITE_PAWN;
-
+    board[D][2] = RED_PAWN;
+    board[F][4] = RED_PAWN;
+    board[G][5] = WHITE_PAWN;
+    board[H][8] = WHITE_PAWN;*/
+    generate_board(board, state, board_string);
+    printf("%s", board_string);
     while (1) {
-        print_board(board, state);
         char input[6];
         fgets(input, 6, stdin); // A1<spacja>B
         int from_col = (int)input[0]-65;
@@ -333,24 +339,25 @@ int main() {
         int where_row = (int)input[4]-48;
         if (from_col>=A && from_col<=H  && from_row>=1 && from_row<=8 && where_col>=A && where_col<=H && where_row>=1 && where_row<=8) {
             //printf("%c%d %c%d\n", from_col+65, from_row, where_col+65, where_row);
-            if ((move_error_no = move(board, &state, last_used_figure, from_col, from_row, where_col, where_row)) != 0) {
-                switch(move_error_no) {
-                    case ERROR_WRONG_STATE:    printf("Nieprawidlowy stan gry!\n");                 break;
-                    case ERROR_FIELD_INVALID:  printf("Nieprawidlowy indeks pola!\n");              break;
-                    case ERROR_FIELD_TAKEN:    printf("Pole docelowe zajete!\n");                   break;
-                    case ERROR_WRONG_FIGURE:   printf("Nie twoja figura!/Nie ma takiej figury!\n"); break;
-                    case ERROR_FORCE_CAPTURE:  printf("Masz mozliwe bicie, wiec musisz bic!\n");    break;
-                    case ERROR_NO_ENEMY:       printf("Na twojej drodze nie ma przeciwnika!\n");    break;
-                    case ERROR_MOVE_INCORRECT: printf("Nieprawidlowy ruch!\n");                     break;
-                    default:                   printf("Error no. %d", move_error_no);               break;
-                }
+            move_error_no = move(board, &state, last_used_figure, from_col, from_row, where_col, where_row);
+            if (move_error_no == 0) {
+                is_win(board, &state);
+                generate_board(board, state, board_string);
+                printf("%s", board_string);
             }
-            is_win(board, &state);
+            else {
+                generate_error_message(move_error_no, error_message);
+                printf("%s", error_message);
+            }
         }
         else {
             printf("Input error!, Używaj formatu A1<spacja>C2\n");
         }
         fgets(input, 6, stdin);
     }
-    return 0;
 }
+
+/*int main() {
+    test();
+    return 0;
+}*/

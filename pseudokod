@@ -1,0 +1,37 @@
+// To, co jest kodem można wprost przekopiować (ale nie trzeba :P), resztę trzeba zaimplementować
+// Zmienne potrzebne do działania gry. Oczywiście muszą być unikalne dla każdej sesji gry, więc nie mogą być np. w pamięci współdzielonej
+enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
+enum GAME_STATE state = NEW_GAME; // Aktualny stan gry
+int last_used_figure[3] = {0, 0, 0}; // Czy ostatio użyta figura musi być znowu użyta i gdzie znajduje się ona znajduje: przymus, kolumna, rząd
+enum MOVE_ERROR move_error_no; // Kod błędu ruchu, 0 - brak błędu
+char board_string[1500]; // Tablica przechowująca planszę dla klientów jako string
+char error_message[50]; // Tablica przechowująca wiadomość o błędnym ruchu jako string
+
+new_game(board, &state); // Rozpoczęcie nowej gry
+generate_board(board, state, board_string, move_error_no); // Generowanie nowego board_string
+Wyślij board_string do obu klientów
+
+int from_col. from_row; // Skąd bierzemy figurę
+int where_col, where_row; // Gdzie ją kładziemy
+while (*state == WHITE_TURN || *state == RED_TURN) { // Dopóki trwają tury graczy
+    Odbierz od ODPOWIEDNIEGO DLA TURY! klienta adresu figury, którą chce poruszyć oraz pola docelowego
+    /* Tury zmieniają się same podczas ruchu, więc należy jedynie sprawdzać czy odpowiedni klient wykoał ruch w zależności od wartości zmiennej *state
+    Albo po prostu odebrać wiadomość od odpowiedniego klienta, ale UWAGA NIE ODBIERAĆ NA ZMIANĘ! bo dany gracz może mieć kilka tur z rzędu*/
+    
+    /* Zarówno adres kolumny, jak i wiersza jest typu int, więc jeśli klient wyśle char, to
+    to można je zamienić w ten sposób: kolumna=(int)character-65, a rząd=(int)character-48*/
+    from_col = ... itd.
+
+    // Wykonanie ruchu
+    move_error_no = move(board, &state, last_used_figure, from_col, from_row, where_col, where_row);
+    if (move_error_no == 0) { // Jeśli nie było błędu
+        is_win(board, &state); // Sprawdzenie czy ktoś wygrał
+        generate_board(board, state, board_string, move_error_no); // Generowanie nowego board_string
+        Wyślij board_string DO OBU klientów
+    }
+    else { // Jeśli jednak był błąd
+        generate_error_message(move_error_no, error_message);
+        Wyślij DO WŁAŚCIWEGO klienta error_message.
+    }
+}
+Zakończ grę, może zapytaj graczy o rewanż? Jak trzeba to posprzątaj po kolejkach itd.

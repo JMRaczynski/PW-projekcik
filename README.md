@@ -12,10 +12,14 @@ Plansza jest przechowywana w tablicy dwuwymiarowej 8x9 pól; rząd numer 0 jest 
 Pierwszy indeks oznacza kolumnę, drugi natomiast wiersz. <br/>
 Kolumny są oznaczane enumem zawierającym kolejne, wielkie litery alfabetu.<br/>
 <b>Rzędy numerowane są od 1!</b><br/>
-Póki co gra jest osobnym programem, ponieważ tak jest łatwiej ją testować. <br/>
-W wersji testowej pionki przesuwa się wpisując na stdin komendy w postaci "skąd[spacja]dokąd", np."A1 C3".
+<s>Póki co gra jest osobnym programem, ponieważ tak jest łatwiej ją testować. <br/>
+W wersji testowej pionki przesuwa się wpisując na stdin komendy w postaci "skąd[spacja]dokąd", np."A1 C3".</s>
 
-<br/><p>Warcaby są już w prawie grywalnym stanie, (brakuje przede wszystkim warunku zwycięstwa), jednak nie miałem czasu ich dobrze przetestować, także jakby się komuś nudziło, to zapraszam do testowania. Jeśli komuś udałoby się "zepsuć" grę, to byłbym wdzięczny za podesłanie screena z kilku ostatnich ruchów. :)<sub>PJT</sub></p>
+<h3>Informacja dla kogoś, kto chciałby podjąć się podpięcia warcabów pod serwer :)</h3>
+<p>Wśród plików gry znajduje się pseudokod, znajduje się tam cały kod potrzebny do uruchomienia warcabów.</p>
+<p>Wśród plików jest również skrypt compilerun.sh. Jeśli macie zainstalowany tmux (jeśli nie, to najpierw 'sudo apt-get install tmux' :D), kompiluje on wszystkie pliki, usuwa kolejkę komunikatów (jeśli macie inne id kolejki, niż ja, to musicie zmienić sobie w skrypcie na własne), a następnie uruchamia w jednym oknie 5 terminali (1 serwer i 4 klientów). Tylko (obecnie) serwer nie radzi sobie z kilkoma klientami logującymi się w tym samym czasie, więc ten skrypt nie działa poprawnie.</p>
+
+<br/><p>Warcaby są już w <s>prawie</s> grywalnym stanie, jednak nie miałem czasu ich dobrze przetestować, także jakby się komuś nudziło, to zapraszam do testowania. Jeśli komuś udałoby się "zepsuć" grę, to byłbym wdzięczny za podesłanie screena z kilku ostatnich ruchów. :)<sub>PJT</sub></p>
 
 <br/><p>Okazuje się, że nie jest łatwo aż tak nagiąć zasady warcabów, żeby w żaden sposób nie zmuszać gracza do bicia. Chodzi mi tu o serię bić - po zbiciu pionka przeciwnika, 
 jeśli gracz może zbić tym samym pionkiem kolejny, to musi to zrobić. Także zaimplementowałem, nazwijmy to, "słaby" przymus bicia. Polega to na tym, że nie przeglądam wszystkich 
