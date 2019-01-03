@@ -5,7 +5,7 @@ echo "Kompilowanie klienta"
 gcc -Wall warcabyk.c -o warcabyk
 
 echo "Usuwanie kolejki komunikatow"
-ipcrm -q 0
+ipcrm -Q 3
 echo "Starting tmux"
 tmux new-session -d -s "Warcaby" "./warcabys"
 tmux set -g mouse on
