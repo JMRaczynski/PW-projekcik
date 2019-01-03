@@ -17,7 +17,7 @@ W wersji testowej pionki przesuwa się wpisując na stdin komendy w postaci "sk�
 
 <h3>Informacja dla kogoś, kto chciałby podjąć się podpięcia warcabów pod serwer :)</h3>
 <p>Wśród plików gry znajduje się pseudokod, znajduje się tam cały kod potrzebny do uruchomienia warcabów.</p>
-<p>Wśród plików jest również skrypt compilerun.sh. Jeśli macie zainstalowany tmux (jeśli nie, to najpierw 'sudo apt-get install tmux' :D), kompiluje on wszystkie pliki, usuwa kolejkę komunikatów, a następnie uruchamia w jednym oknie 5 terminali (1 serwer i 4 klientów). Tylko (obecnie) serwer nie radzi sobie z kilkoma klientami logującymi się w tym samym czasie, więc ten skrypt nie działa poprawnie.</p>
+<p>Wśród plików jest również skrypt compilerun.sh. Jeśli macie zainstalowany tmux (jeśli nie, to najpierw 'sudo apt-get install tmux' :D), skrypt ten kompiluje wszystkie pliki, usuwa kolejkę komunikatów, a następnie uruchamia w jednym oknie 5 terminali (1 serwer i 4 klientów). Tylko (obecnie) serwer nie radzi sobie z kilkoma klientami logującymi się w tym samym czasie, więc ten skrypt nie działa poprawnie.</p>
 
 <br/><p>Warcaby są już w <s>prawie</s> grywalnym stanie, jednak nie miałem czasu ich dobrze przetestować, także jakby się komuś nudziło, to zapraszam do testowania. Jeśli komuś udałoby się "zepsuć" grę, to byłbym wdzięczny za podesłanie screena z kilku ostatnich ruchów. :)<sub>PJT</sub></p>
 
