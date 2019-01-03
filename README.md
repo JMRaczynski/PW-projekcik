@@ -36,3 +36,6 @@ pionków gracza poszukując tych, które mogą bić, a jedynie sprawdzam, czy po
   <li>???</li>
   <li>Profit :)</li>
 </ul>
+
+<h1>Tutorial do gita</h1>
+Jeśli ktoś chciałby korzystać z gita w terminalu, a nie ma pojęcia jak to zrobić, to polecam zapoznanie się <a href="https://git-scm.com/book/pl/v1/Podstawy-Gita"> z 2 rozdziałem tego poradnika</a>.
