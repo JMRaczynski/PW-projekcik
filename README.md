@@ -7,6 +7,10 @@ PROSZĘ O TESTOWANIE i informowanie o zauważonych błędach w działaniu!!!
 
 Z góry zastrzegam że program nie jest "idiotoodporny" i może słabo znosić błędny input (zwłaszcza zbyt długi).
 
+-------
+
+UPDATE!!! Wrzuciłem do tej gałęzi wersję 1.1 która POWINNA obsługiwać współbieżne logowanie. Proszę o testowanie współbieżnego logowania.
+
 <h3>GRA</h3>
 Plansza jest przechowywana w tablicy dwuwymiarowej 8x9 pól; rząd numer 0 jest pusty, żeby zachować klasyczną numerację pól od 1.<br/>
 Pierwszy indeks oznacza kolumnę, drugi natomiast wiersz. <br/>
