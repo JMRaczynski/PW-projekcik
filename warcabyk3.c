@@ -21,6 +21,7 @@ int main() {
     struct msgbuf odbior, wiadomosc;
     int msgId, odbiorId, roomid, sharedMemoryIds[2], *usersOnline, *numberOfWaitingClients;
     char login[20], password[20], option[2];
+    long oldtype;
 
     for (int i = 0; i < 2; i++) {
         if ((sharedMemoryIds[i] = shmget(KEY + i, sizeof(int), IPC_CREAT | 0777)) == -1) {
@@ -109,24 +110,38 @@ int main() {
 	{
 	case '1':
 	  
-	    printf("Oczekiwanie\n");
-	    //odbiór komunikatu o dołączeniu drugiej osoby i reszta to już gra chyba wololo
-	    sleep(5);
-	    break;
-	case '2':
-
-	    scanf("%d", &roomid);
-	    memset(wiadomosc.message, 0, strlen(wiadomosc.message));
-	    sprintf(wiadomosc.message, "%d %ld", roomid, odbior.type);
-	    printf("%s\n", wiadomosc.message);
-	    if (msgsnd(msgId, &wiadomosc, 10, 0) == -1) {
-	      perror("Player2 roomid send client\n");
-	      exit(1);
+	    memset(odbior.message, 0, strlen(odbior.message));
+	    if (msgrcv(msgId, &odbior, 100, odbior.type, 0) == -1) {
+	        perror("Game welcome receive player1\n");
+	        exit(1);
 	    }
-	    // trzeba teraz zmienić sendtype żeby móc wysyłać wiadomości do forka gry :)
-	    
-	    //while(1);
+	    printf("%s\n", odbior.message);
 	    break;
+	    
+	case '2':
+	  
+	    if(odbior.message[0] == 'N'){}//Jesli nie ma zadnego pokoju do dolaczenia trzeba wrocic do odbierania menu
+	    else{//przypadek kiedy pokoj jest
+	        scanf("%d", &roomid);
+	        memset(wiadomosc.message, 0, strlen(wiadomosc.message));
+	        sprintf(wiadomosc.message, "%d %ld", roomid, odbior.type);
+	        printf("%s\n", wiadomosc.message);
+	        if (msgsnd(msgId, &wiadomosc, 10, 0) == -1) {
+	            perror("Player2 roomid send client\n");
+	            exit(1);
+	        }
+	    
+	    oldtype = wiadomosc.type;
+	    wiadomosc.type = roomid;
+	    memset(odbior.message, 0, strlen(odbior.message));
+	    if (msgrcv(msgId, &odbior, 100, odbior.type, 0) == -1) {
+	        perror("Game welcome message receive client\n");
+	        exit(1);
+	    }
+	    printf("%s\n", odbior.message);
+	    }
+	    break;
+	    
 	default:
 	    printf("Nic specjalnego\n");
 	    break;

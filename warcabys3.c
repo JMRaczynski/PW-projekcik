@@ -184,10 +184,10 @@ int main() {
                         switch (odbior.message[0])
                         {
                         case '1':
+			  
                             printf("Tworzenie gry\n");
 			    numofplayers[odbior.type] = 1;//wpisanie rekordu na pozycji nr ID - typ komunikatu wysylany na serwer
 			    gameids[odbior.type] = odbior.type;
-			    
 			    
 			    memset(wiadomosc.message, 0, strlen(wiadomosc.message));//wysylanie wiadomosci o utworzeniu pokoju wraz z ID
 			    sprintf(roomid, "%ld\n", odbior.type);
@@ -200,7 +200,6 @@ int main() {
 			            exit(1);
 			        }
 			    
-			    //sleep(5);
 			    while(numofplayers[odbior.type] == 1) //oczekiwanie na dolaczenie drugiego gracza
 			      {}
 			    printf("%d\n", numofplayers[odbior.type]);
@@ -218,11 +217,13 @@ int main() {
 			    printf("ID czerwonych: %d\nID bialych %d\nMOZNA ZACZYNAC GRE\n", redid, whiteid);
 			    sleep(10);
                             break;
+			    
                         case '2':
+			  
 			    printf("Dolaczanie do gry\n");
+			    numofgames = 0;
 			    memset(wiadomosc.message, 0, strlen(wiadomosc.message));
 			    strcpy(wiadomosc.message, CHOOSE_ROOM);
-			    numofgames = 0;
 			    
 			    for(int i = 0; i < MAX_NUM_OF_USERS; i++){//tworzenie listy dostepnych pokoi
 			      if(numofplayers[i] == 1){
@@ -232,55 +233,55 @@ int main() {
 				    //printf("%d\n", gameids[i]);
 			        }
 			    }
-			    
+
 			    if(numofgames == 0){//tworzenie komunikatu powrotu do menu w przypadku braku pokoi
 			        memset(wiadomosc.message, 0, strlen(wiadomosc.message));
 			        strcpy(wiadomosc.message, NO_GAME);
-				//wyslanie listy dostepnych pokoi lub komunikatu o braku pokoi
-				if (msgsnd(msgId, &wiadomosc, 85, 0) == -1)
-				  {
-				    perror("Room list or back-to-menu  server\n");
-			            exit(1);
-				  }
-				break;
+				
+				if (msgsnd(msgId, &wiadomosc, 85, 0) == -1)//wyslanie komunikatu o braku pokoi
+				    {
+				        perror("Room list or back-to-menu  server\n");
+			                exit(1);
+				    }
 			    }
-			    
-			    //wyslanie listy dostepnych pokoi lub komunikatu o braku pokoi
-			    if (msgsnd(msgId, &wiadomosc, 85, 0) == -1)
-			        {
-				    perror("Room list or back-to-menu  server\n");
-			            exit(1);
-			        }
+			    else{//obsluga calego przypadku gdy jest do czego dołączyć
+			      
+			        if (msgsnd(msgId, &wiadomosc, 85, 0) == -1)//wysylanie listy pokoi
+			            {
+				        perror("Room list or back-to-menu  server\n");
+				        exit(1);
+			            }
 
-			    //odbieranie wybranego pokoju
-			    memset(odbior.message, 0, strlen(odbior.message));
-			    if (msgrcv(odbiorId, &odbior, 10, odbior.type, 0) == -1)
-			        {
-				  perror("Roomid and redid receive server\n");
-				  exit(1);
-			        }
-			    //printf("%s\n", odbior.message);
-			    sscanf(odbior.message, "%d %d", &chosenid, &redid);
-			    //printf("chosenid %d %d\n", chosenid, redid);
-
-			    numofplayers[chosenid] = 2;//wysylanie do procesu gry typu na jaki wysylac wiadomosci do czerwonych 
-			    //TA LINIJKA NIZEJ JEST WAZNA!!!!!!!!!PO ZAKONCZENIU GRY TRZEBA PRZYWROCIC OLDTYPE
-			    oldtype = wiadomosc.type;
-			    wiadomosc.type = chosenid;
-
-			    memset(wiadomosc.message, 0, strlen(wiadomosc.message));
-			    sprintf(wiadomosc.message, "%d", redid);
-			    if (msgsnd(msgId, &wiadomosc, 5, 0) == -1)
-			        {
-				    perror("Redid to game-fork sending\n");
-			            exit(1);
-			        }
-			    sleep(1);
-			    printf("status gry widoczny z procesu oczekujacego: %d\n", gamestates[chosenid]);
-			    sleep(10);
-			    
-			    while(gamestates[chosenid] == 1){}//petla zawieszajaca proces na czas trwania gry w forku gracza1
+			        memset(odbior.message, 0, strlen(odbior.message));
+			        if (msgrcv(odbiorId, &odbior, 10, odbior.type, 0) == -1)//odbieranie wybranego pokoju
+			            {
+				        perror("Roomid and redid receive server\n");
+				        exit(1);
+			            }
+			        //printf("%s\n", odbior.message);
+			        sscanf(odbior.message, "%d %d", &chosenid, &redid);
+			        //printf("chosenid %d %d\n", chosenid, redid);
+			      
+			        numofplayers[chosenid] = 2;//wysylanie do procesu gry typu na jaki wysylac wiadomosci do czerwonych 
+			        //TA LINIJKA NIZEJ JEST WAZNA!!!!!!!!!PO ZAKONCZENIU GRY TRZEBA PRZYWROCIC OLDTYPE
+			        oldtype = wiadomosc.type;
+			        wiadomosc.type = chosenid;
+			      
+			        memset(wiadomosc.message, 0, strlen(wiadomosc.message));
+			        sprintf(wiadomosc.message, "%d", redid);
+			        if (msgsnd(msgId, &wiadomosc, 5, 0) == -1)
+			            {
+				        perror("Redid to game-fork sending\n");
+				        exit(1);
+			            }
+			        sleep(1);
+			        printf("status gry widoczny z procesu dolaczajacego: %d\n", gamestates[chosenid]);
+			        sleep(10);
+			      
+			        while(gamestates[chosenid] == 1){}//petla zawieszajaca proces na czas trwania gry w forku gracza1
+			    }
                             break;
+			    
                         case '3':
                             strcpy(wiadomosc.message, SUCCESSFUL_LOGOUT);
                             if (msgsnd(msgId, &wiadomosc, 53, 0) == -1)
