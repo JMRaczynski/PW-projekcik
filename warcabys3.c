@@ -24,10 +24,7 @@
 #define NO_GAME "Nikt nie utworzyl jeszcze pokoju. Wroc do menu i wybierz ponownie\n"
 
 char (*logins)[20], (*passwords)[20];
-//int *gamestates = new int[MAX_NUM_OF_USERS];
-//int *gameids = new int[MAX_NUM_OF_USERS];
-//int *numsofplayers = new int[MAX_NUM_OF_USERS];
-int **gamestates, **gameids, **numsofplayers;
+int *gamestates, *gameids, *numofplayers;
 
 struct msgbuf {
     long type;
@@ -56,15 +53,15 @@ int checkIfPwIsCorrect(char* login, char* pw) {
 
 int main() {
     struct msgbuf wiadomosc, odbior;
-    int types[MAX_NUM_OF_USERS * 2] = {0}, msgId, gamerecordnumber, odbiorId, *usersOnline, sharedMemoryIds[7],
-        isLoginInBase, isPwCorrect;
-    int *numberOfWaitingClients;
-    int whiteid, redid;
+    int types[MAX_NUM_OF_USERS * 2] = {0}, msgId, odbiorId, *usersOnline, sharedMemoryIds[7],
+        isLoginInBase, isPwCorrect, numofgames, whiteid, redid, chosenid, *numberOfWaitingClients;
+    //int *numberOfWaitingClients;
+    //int whiteid, redid, chosenid;
     unsigned int sharedMemorySizes[2] = {sizeof(int), MAX_NUM_OF_USERS * 40};
     char login[20];
-    //char roomlist[MAX_NUM_OF_USERS * 10];
     char roomid[5];
-    int numofgames;
+    //int numofgames;
+    long oldtype;
     
     for (int i = 0; i < 4; i++) {
         if ((sharedMemoryIds[i] = shmget(KEY + i, sharedMemorySizes[i / 2], IPC_CREAT | 0777)) == -1) {
@@ -72,22 +69,13 @@ int main() {
             exit(1);
         }
     }
-    
-    if((sharedMemoryIds[4] = shmget(KEY + 4, sizeof(int) * MAX_NUM_OF_USERS, IPC_CREAT | 0777)) == -1){
-        perror("shmget4 server\n");
-        exit(1);
-    }//tablica stanów
+    for(int i = 4; i < 7; i++){
+        if((sharedMemoryIds[i] = shmget(KEY + i, sizeof(int) * MAX_NUM_OF_USERS, IPC_CREAT | 0777)) == -1){
+            perror("shmget server\n");
+            exit(1);
+        }
+    }
 
-    if((sharedMemoryIds[5] = shmget(KEY + 5, sizeof(int) * MAX_NUM_OF_USERS , IPC_CREAT | 0777)) == -1){
-        perror("shmget5 server\n");
-        exit(1);
-    }//tablica ID
-
-    if((sharedMemoryIds[6] = shmget(KEY + 6, sizeof(int) * MAX_NUM_OF_USERS , IPC_CREAT | 0777)) == -1){
-        perror("shmget6 server\n");
-        exit(1);
-    }// tablica liczby graczy
-    
     if ((usersOnline = shmat(sharedMemoryIds[0], NULL, 0777)) == (void *) -1 ) {
         perror("shmat1 server\n");
         exit(1);
@@ -104,15 +92,15 @@ int main() {
         perror("shmat4 server\n");
         exit(1);
     }
-    if ((gamestates = shmat(sharedMemoryIds[4], NULL, 0777)) == (void *) -1 ) {
+    if ((gamestates =(int*) shmat(sharedMemoryIds[4], NULL, 0777)) == (void *) -1 ) {
         perror("shmat4 server\n");
         exit(1);
     }
-    if ((gameids = shmat(sharedMemoryIds[5], NULL, 0777)) == (void *) -1 ) {
+    if ((gameids = (int*)shmat(sharedMemoryIds[5], NULL, 0777)) == (void *) -1 ) {
         perror("shmat5 server\n");
         exit(1);
     }
-    if ((numsofplayers = shmat(sharedMemoryIds[6], NULL, 0777)) == (void *) -1 ) {
+    if ((numofplayers = (int*)shmat(sharedMemoryIds[6], NULL, 0777)) == (void *) -1 ) {
         perror("shmat6 server\n");
         exit(1);
     }
@@ -123,9 +111,10 @@ int main() {
 
     *usersOnline = 0;
     *numberOfWaitingClients = 0;
+    
     for(int i = 0; i < MAX_NUM_OF_USERS; i++){
       gamestates[i] = 0;
-      numsofplayers[i] = 0;
+      numofplayers[i] = 0;
       gameids[i] = 0;
     }
 
@@ -196,17 +185,11 @@ int main() {
                         {
                         case '1':
                             printf("Tworzenie gry\n");
-			    for(int i = 0; i < MAX_NUM_OF_USERS; i++){
-			        if(numsofplayers[i] == 0){
-				    numsofplayers[i] = 1;
-				    gamerecordnumber = i;
-			 	break;
-			        }
-			    }
-			    printf("%d gamerecord\n", gamerecordnumber);
-			    gameids[gamerecordnumber] = (int*)odbior.type;
-			    gamestates[gamerecordnumber] = (int*)1;
-			    memset(wiadomosc.message, 0, strlen(wiadomosc.message));
+			    numofplayers[odbior.type] = 1;//wpisanie rekordu na pozycji nr ID - typ komunikatu wysylany na serwer
+			    gameids[odbior.type] = odbior.type;
+			    
+			    
+			    memset(wiadomosc.message, 0, strlen(wiadomosc.message));//wysylanie wiadomosci o utworzeniu pokoju wraz z ID
 			    sprintf(roomid, "%ld\n", odbior.type);
 			    strcpy(wiadomosc.message, ROOM_MADE);
 			    strcat(wiadomosc.message, roomid);
@@ -216,39 +199,87 @@ int main() {
 				    perror("Room confirmation send server\n");
 			            exit(1);
 			        }
-			    sleep(10);
-			    //oczekiwanie na dolaczenie drugiego gracza
-			    while(numsofplayers[gamerecordnumber] == (int*)1)
-			      {}
-			    //odebranie komunikatu z id drugiego gracza
 			    
+			    //sleep(5);
+			    while(numofplayers[odbior.type] == 1) //oczekiwanie na dolaczenie drugiego gracza
+			      {}
+			    printf("%d\n", numofplayers[odbior.type]);
+			    
+			    
+			    memset(odbior.message, 0, strlen(odbior.message)); //odebranie komunikatu z id drugiego gracza
+			    if(msgrcv(odbiorId, &odbior, 5, odbior.type, 0) == -1){
+			      perror("Redid to fork-game receiving");
+			      exit(1);
+			    }
+			    
+			    gamestates[odbior.type] = 1; //zmiana statusu gry na rozpoczeta
+			    whiteid = wiadomosc.type;
+			    sscanf(odbior.message, "%d", &redid);
+			    printf("ID czerwonych: %d\nID bialych %d\nMOZNA ZACZYNAC GRE\n", redid, whiteid);
+			    sleep(10);
                             break;
                         case '2':
-                            printf("Dolaczanie do gry\n");
-			    memset(wiadomosc.message, 0, strlen(wiadomosc.message));
-			    //strcpy(wiadomosc.message, CHOOSE_ROOM);
-			    numofgames = 0;
 			    printf("Dolaczanie do gry\n");
-			    for(int i = 0; i < MAX_NUM_OF_USERS; i++){
-			      printf("numsofp %ls\n", numsofplayers[i]);
-			      if(numsofplayers[i] == 1){
+			    memset(wiadomosc.message, 0, strlen(wiadomosc.message));
+			    strcpy(wiadomosc.message, CHOOSE_ROOM);
+			    numofgames = 0;
+			    
+			    for(int i = 0; i < MAX_NUM_OF_USERS; i++){//tworzenie listy dostepnych pokoi
+			      if(numofplayers[i] == 1){
 				    numofgames++;
-			  	    sprintf(roomid, "%ls\n", gameids[i]);
+			  	    sprintf(roomid, "%d\n", gameids[i]);
 				    strcat(wiadomosc.message, roomid);
-				    printf("%ls\n", gameids[i]);
+				    //printf("%d\n", gameids[i]);
 			        }
 			    }
-			    if(numofgames == 0){
+			    
+			    if(numofgames == 0){//tworzenie komunikatu powrotu do menu w przypadku braku pokoi
 			        memset(wiadomosc.message, 0, strlen(wiadomosc.message));
 			        strcpy(wiadomosc.message, NO_GAME);
+				//wyslanie listy dostepnych pokoi lub komunikatu o braku pokoi
+				if (msgsnd(msgId, &wiadomosc, 85, 0) == -1)
+				  {
+				    perror("Room list or back-to-menu  server\n");
+			            exit(1);
+				  }
+				break;
 			    }
-			    printf("%s\n", wiadomosc.message);
+			    
+			    //wyslanie listy dostepnych pokoi lub komunikatu o braku pokoi
 			    if (msgsnd(msgId, &wiadomosc, 85, 0) == -1)
 			        {
 				    perror("Room list or back-to-menu  server\n");
 			            exit(1);
 			        }
+
+			    //odbieranie wybranego pokoju
+			    memset(odbior.message, 0, strlen(odbior.message));
+			    if (msgrcv(odbiorId, &odbior, 10, odbior.type, 0) == -1)
+			        {
+				  perror("Roomid and redid receive server\n");
+				  exit(1);
+			        }
+			    //printf("%s\n", odbior.message);
+			    sscanf(odbior.message, "%d %d", &chosenid, &redid);
+			    //printf("chosenid %d %d\n", chosenid, redid);
+
+			    numofplayers[chosenid] = 2;//wysylanie do procesu gry typu na jaki wysylac wiadomosci do czerwonych 
+			    //TA LINIJKA NIZEJ JEST WAZNA!!!!!!!!!PO ZAKONCZENIU GRY TRZEBA PRZYWROCIC OLDTYPE
+			    oldtype = wiadomosc.type;
+			    wiadomosc.type = chosenid;
+
+			    memset(wiadomosc.message, 0, strlen(wiadomosc.message));
+			    sprintf(wiadomosc.message, "%d", redid);
+			    if (msgsnd(msgId, &wiadomosc, 5, 0) == -1)
+			        {
+				    perror("Redid to game-fork sending\n");
+			            exit(1);
+			        }
+			    sleep(1);
+			    printf("status gry widoczny z procesu oczekujacego: %d\n", gamestates[chosenid]);
 			    sleep(10);
+			    
+			    while(gamestates[chosenid] == 1){}//petla zawieszajaca proces na czas trwania gry w forku gracza1
                             break;
                         case '3':
                             strcpy(wiadomosc.message, SUCCESSFUL_LOGOUT);

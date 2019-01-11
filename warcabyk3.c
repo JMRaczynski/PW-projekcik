@@ -19,7 +19,7 @@ struct msgbuf {
 
 int main() {
     struct msgbuf odbior, wiadomosc;
-    int msgId, odbiorId, sharedMemoryIds[2], *usersOnline, *numberOfWaitingClients;
+    int msgId, odbiorId, roomid, sharedMemoryIds[2], *usersOnline, *numberOfWaitingClients;
     char login[20], password[20], option[2];
 
     for (int i = 0; i < 2; i++) {
@@ -108,12 +108,24 @@ int main() {
 	switch(option[0])
 	{
 	case '1':
+	  
 	    printf("Oczekiwanie\n");
+	    //odbiór komunikatu o dołączeniu drugiej osoby i reszta to już gra chyba wololo
 	    sleep(5);
 	    break;
 	case '2':
-	    printf("Trzeba zrobic wybor\n");
-	    sleep(10);
+
+	    scanf("%d", &roomid);
+	    memset(wiadomosc.message, 0, strlen(wiadomosc.message));
+	    sprintf(wiadomosc.message, "%d %ld", roomid, odbior.type);
+	    printf("%s\n", wiadomosc.message);
+	    if (msgsnd(msgId, &wiadomosc, 10, 0) == -1) {
+	      perror("Player2 roomid send client\n");
+	      exit(1);
+	    }
+	    // trzeba teraz zmienić sendtype żeby móc wysyłać wiadomości do forka gry :)
+	    
+	    //while(1);
 	    break;
 	default:
 	    printf("Nic specjalnego\n");
