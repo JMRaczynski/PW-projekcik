@@ -315,7 +315,7 @@ void test() {
     enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
     enum GAME_STATE state = NEW_GAME; // Aktualny stan gry
     int last_used_figure[3] = {0, 0, 0}; // Czy ostatio użyta figura musi być znowu użyta i gdzie znajduje się ona znajduje: przymus, kolumna, rząd
-    enum MOVE_ERROR move_error_no = 0;
+    enum MOVE_ERROR move_error_no = NO_ERROR;
     char board_string[1500];
     char error_message[50];
     new_game(board, &state);
