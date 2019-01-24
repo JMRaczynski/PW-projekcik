@@ -1,8 +1,8 @@
 #!/bin/bash
 echo "Kompilowanie serwera"
-gcc -Wall warcabys.c gra.c -o warcabys
+gcc -Wall warcabys2.c gra.c -o warcabys
 echo "Kompilowanie klienta"
-gcc -Wall warcabyk.c -o warcabyk
+gcc -Wall warcabyk2.c -o warcabyk
 
 echo "Usuwanie kolejki komunikatow"
 ipcrm -Q 3
@@ -15,3 +15,4 @@ tmux split-window -v "./warcabyk"
 tmux split-window -v -t 0 "./warcabyk"
 tmux split-window -v -t 0 "./warcabyk"
 tmux attach-session -d -t "Warcaby"
+ipcrm -M 5

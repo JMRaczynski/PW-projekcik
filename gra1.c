@@ -82,7 +82,7 @@ void generate_board(enum FIELD_STATE board[8][9], enum GAME_STATE state, char *b
         sprintf(tmp_string, "%c   ", row);
         strcat(board_string, tmp_string);
     }
-    strcat(board_string, "\n");
+    strcat(board_string, "\n\0");
 }
 
 void generate_error_message(enum MOVE_ERROR move_error_no, char* message) { // Generuj wiadomość o błędzie
@@ -310,6 +310,28 @@ enum COLOR is_win(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Czy
         return NO_COLOR;
 }
 
+void print(int a){
+    if(write(1,&a,sizeof(a))<0){
+        perror("write");exit(1);
+    }
+}
+void print_str(char tab[], int size){
+    if(write(1,tab,size)<0){
+        perror("write_str");exit(1);
+    }
+}
+void scan(char *tab, int size){
+    int i = 0,n;
+    char pom=0;
+    while((n=read(0,&pom,1))>0 && pom!='\n'){
+        if(i<size)tab[i++]=pom;
+        if( pom=='\n' || pom=='\0')break;
+    }
+    if(n<0){
+        perror("read");exit(1);
+    }
+}
+
 void test() {
     // !!!Oczywiście, wszystko w main służy tylko do testów i ostatecznie przyjmie inną formę!!!
     enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
@@ -329,11 +351,16 @@ void test() {
     board[G][5] = WHITE_PAWN;
     board[H][8] = WHITE_PAWN;*/
     generate_board(board, state, board_string);
-    printf("%d\n%d\n%ld\n",move_error_no, state, sizeof(board_string));
-    printf("%s", board_string);
+//    printf("%d\n%d\n%ld\n",move_error_no, state, sizeof(board_string));
+    print(move_error_no);
+    print(state);
+    print(sizeof(board_string));
+    //printf("\n%s\n", board_string);
+    print_str(board_string, sizeof(board_string));
     while (1) {
         char input[6];
-        fgets(input, 6, stdin); // A1<spacja>B
+        //fgets(input, 6, stdin); // A1<spacja>B
+        scan(input,6);
         int from_col = (int)input[0]-65;
         int from_row = (int)input[1]-48;
         int where_col = (int)input[3]-65;
@@ -341,23 +368,34 @@ void test() {
         if (from_col>=A && from_col<=H  && from_row>=1 && from_row<=8 && where_col>=A && where_col<=H && where_row>=1 && where_row<=8) {
             //printf("%c%d %c%d\n", from_col+65, from_row, where_col+65, where_row);
             move_error_no = move(board, &state, last_used_figure, from_col, from_row, where_col, where_row);
-            printf("%d\n",move_error_no);
+            //printf("%d\n",move_error_no);
+            print(move_error_no);
             if (move_error_no == 0) {
                 is_win(board, &state);
                 generate_board(board, state, board_string);
-                printf("%d\n%ld\n",state, sizeof(board_string));
-                printf("%s", board_string);
+                //printf("%d\n%ld\n",state, sizeof(board_string));
+                print(state);
+                print(sizeof(board_string));
+                //printf("%s", board_string);
+                print_str(board_string,sizeof(board_string));
             }
             else {
                 generate_error_message(move_error_no, error_message);
-                printf("%ld\n%s",sizeof(error_message), error_message);
+//                printf("%ld\n%s",sizeof(error_message), error_message);
+                print(state);
+                print(sizeof(error_message));
+                print_str(error_message, sizeof(error_message));
             }
         }
         else {
-            printf("-1\n%d\n%ld\n",state,sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
-            printf("Input error!, Używaj formatu A1<spacja>C2\n");
+            //printf("-1\n%d\n%ld\n",state,sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
+            print(-1);
+            print(state);
+            print(sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
+            print_str("Input error!, Używaj formatu A1<spacja>C2\n", sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
         }
-        fgets(input, 6, stdin);
+        //fgets(input, 6, stdin);
+        //scan(input,6);
     }
 }
 

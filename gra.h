@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 enum COL {A, B, C, D, E, F, G, H};
 enum GAME_STATE {NEW_GAME, WHITE_TURN, RED_TURN, WHITE_WIN, RED_WIN};
