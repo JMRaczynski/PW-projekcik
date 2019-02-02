@@ -172,6 +172,7 @@ int main() {
                     while(1) {
                         memset(wiadomosc.message, 0, strlen(wiadomosc.message));
                         strcpy(wiadomosc.message, MENU);
+                        printf("send_menu %ld\n",wiadomosc.type);
                         if (msgsnd(msgId, &wiadomosc, SIZE, 0) == -1)
                         {
                             perror("Menu send server\n");
@@ -229,8 +230,9 @@ int main() {
                     perror("PIPE");exit(1);}
                    if(pipe(fo)<0){
                     perror("PIPE");exit(1);}
+                   int pid;
                    if(fork()==0){//proces gry
-                       printf("gragra\n");
+                   //    printf("gragra\n");
                     if(close(fi[0])<0){
                         perror("close");exit(1);}
                     if(dup2(fi[1],1)<0){
@@ -239,6 +241,9 @@ int main() {
                         perror("close");exit(1);}
                     if(dup2(fo[0],0)<0){
                         perror("dup2");exit(1);}
+                    pid=getpid();
+                    if(write(1,&pid,sizeof(int))<0){
+                        perror("pid");exit(1);}
                     execl("./gra1","gra",NULL);
                    }
                    else{//komunikacja z procesem gry
@@ -250,26 +255,28 @@ int main() {
                         perror("close");exit(1);}
                     //if(dup2(fo[1],1)<0){
                         //perror("dup2");exit(1);}
+                    if(read(fi[0],&pid,sizeof(int))<0){
+                        perror("pid_r");exit(1);}
                     int err, stat, rozmiar;
                     char odczy[1500];
                     do{
                         //sleep(3);
-                        printf("aaa\n");
+                     //   printf("aaa\n");
                         if(read(fi[0],&err,sizeof(int))<0){
                             perror("odczyt_err");exit(1);}
-                        printf("%d ",err); 
+                       // printf("%d ",err); 
                         if(read(fi[0],&stat,sizeof(int))<0){
                             perror("odczyt_stat");exit(1);}
-                        printf("%d ",stat); 
+                       // printf("%d ",stat); 
                         if(read(fi[0],&rozmiar,sizeof(int))<0){
                             perror("odczyt_rozmiar");exit(1);}
-                        printf("%d ",rozmiar); 
+                       // printf("%d ",rozmiar); 
                         if(read(fi[0],odczy,rozmiar)<0){
                             perror("odczyt_wiad");exit(1);}
                         //printf("\n%s",odczy); 
                         memset(wiadomosc.message, '\0', strlen(wiadomosc.message));
                         strcpy(wiadomosc.message, odczy);
-                        printf("%s\n",wiadomosc.message);
+                       // printf("%s\n",wiadomosc.message);
 
                         if(err==0){
                             
@@ -297,19 +304,41 @@ int main() {
                             //continue;
     
                         }
-                        printf("bbb\n");
-                        
-                        odbior.type=whiteid+1;
+                       // printf("bbb\n");
+                        if(stat>=3)break; 
+                        //odbior.type=whiteid+1;
                         if(msgrcv(msgId,&odbior,SIZE,odbior.type,0)<0){
                             perror("odbior ruchu");exit(1);}
-                        printf("%s\n",odbior.message);
-                        if(write(fo[1],odbior.message,6)<0){
+                        //printf("%s\n",odbior.message);
+                        if(odbior.message[0]=='e' &&odbior.message[1]=='x' && odbior.message[2]=='i' && odbior.message[3]=='t'){
+                            if(stat<=1){
+                                wiadomosc.type=redid;
+                            }else
+                                wiadomosc.type=whiteid;
+                            memset(wiadomosc.message,'\0',sizeof(wiadomosc.message));
+                            strcpy(wiadomosc.message,"Przeciwnik uciekł");
+                            wiadomosc.stat_n=5;
+                            wiadomosc.erro_n=0;
+                            stat=5;
+                            if(msgsnd(msgId,&wiadomosc,SIZE,0)<0){
+                                perror("exit_message");exit(1);}
+                            if(close(fi[0])<0){
+                                perror("clos_in");exit(1);}
+                            if(close(fo[1])<0){
+                                perror("clos_out");exit(1);}
+
+                            kill(pid,9);
+                        }else if(write(fo[1],odbior.message,6)<0){
                             perror("wysylanie przez dup2"); exit(1);}
-                        printf("ccc\n");
+                        //printf("ccc\n");
                    }while(stat<3);
-                    printf("ddd\n");
+                    wiadomosc.type = whiteid;
+                   // printf("odb.type: %d\n",whiteid+1);
+                    gamestates[whiteid+1]=0;
+                    numofplayers[whiteid+1]=0;
+                   // printf("ddd\n");
                    }
-			    sleep(10);
+			    //sleep(5);
                             break;
 			    
                         case '2':
@@ -371,9 +400,11 @@ int main() {
 			        sleep(1);
 			        printf("status gry widoczny z procesu dolaczajacego: %d\n", gamestates[chosenid]);
 			        sleep(10);
-			      
-			        while(gamestates[chosenid] == 1){}//petla zawieszajaca proces na czas trwania gry w forku gracza1
+			      //  printf("przed petla, chosenid %d\n",chosenid); 
+			        while(gamestates[chosenid] == 1){/*printf("%d ",gamestates[chosenid]);*/}//petla zawieszajaca proces na czas trwania gry w forku gracza1
+                       wiadomosc.type = oldtype;
 			    }
+                  // printf("przed break\n");
                             break;
 			    
                         case '3':
