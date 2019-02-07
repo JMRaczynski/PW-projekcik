@@ -337,8 +337,7 @@ void scan(char *tab, int size){
     }
 }
 
-void test() {
-    // !!!Oczywiście, wszystko w main służy tylko do testów i ostatecznie przyjmie inną formę!!!
+int main() {
     enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
     enum GAME_STATE state = NEW_GAME; // Aktualny stan gry
     int last_used_figure[3] = {0, 0, 0}; // Czy ostatio użyta figura musi być znowu użyta i gdzie znajduje się ona znajduje: przymus, kolumna, rząd
@@ -346,65 +345,42 @@ void test() {
     char board_string[1500];
     char error_message[50];
     new_game(board, &state);
-    /*
-    state = RED_TURN;
-    for (int col=A; col<=H; ++col)
-        for (int row=1; row<=8; ++row)
-            board[col][row] = FREE;
-    board[D][2] = RED_PAWN;
-    board[F][4] = RED_PAWN;
-    board[G][5] = WHITE_PAWN;
-    board[H][8] = WHITE_PAWN;*/
     generate_board(board, state, board_string);
-//    printf("%d\n%d\n%ld\n",move_error_no, state, sizeof(board_string));
     print(move_error_no);
     print(state);
     print(sizeof(board_string));
-    //printf("\n%s\n", board_string);
     print_str(board_string, sizeof(board_string));
     while (1) {
         char input[6];
-        //fgets(input, 6, stdin); // A1<spacja>B
         scan(input,6);
         int from_col = (int)input[0]-65;
         int from_row = (int)input[1]-48;
         int where_col = (int)input[3]-65;
         int where_row = (int)input[4]-48;
         if (from_col>=A && from_col<=H  && from_row>=1 && from_row<=8 && where_col>=A && where_col<=H && where_row>=1 && where_row<=8) {
-            //printf("%c%d %c%d\n", from_col+65, from_row, where_col+65, where_row);
             move_error_no = move(board, &state, last_used_figure, from_col, from_row, where_col, where_row);
-            //printf("%d\n",move_error_no);
             print(move_error_no);
             if (move_error_no == 0) {
                 is_win(board, &state);
                 generate_board(board, state, board_string);
-                //printf("%d\n%ld\n",state, sizeof(board_string));
                 print(state);
                 print(sizeof(board_string));
-                //printf("%s", board_string);
                 print_str(board_string,sizeof(board_string));
             }
             else {
                 generate_error_message(move_error_no, error_message);
-//                printf("%ld\n%s",sizeof(error_message), error_message);
                 print(state);
                 print(sizeof(error_message));
                 print_str(error_message, sizeof(error_message));
             }
         }
         else {
-            //printf("-1\n%d\n%ld\n",state,sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
             print(-1);
             print(state);
             print(sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
             print_str("Input error!, Używaj formatu A1<spacja>C2\n", sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
         }
-        //fgets(input, 6, stdin);
-        //scan(input,6);
-    }
-}
 
-int main() {
-    test();
+    }
     return 0;
 }
