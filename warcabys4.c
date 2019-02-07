@@ -315,15 +315,17 @@ int main() {
                             perror("odbior ruchu");exit(1);}
                         //printf("%s\n",odbior.message);
                         if(odbior.message[0]=='e' &&odbior.message[1]=='x' && odbior.message[2]=='i' && odbior.message[3]=='t'){
-                            if(stat<=1){
+                            
                                 wiadomosc.type=redid;
-                            }else
-                                wiadomosc.type=whiteid;
+                            
                             memset(wiadomosc.message,'\0',sizeof(wiadomosc.message));
-                            strcpy(wiadomosc.message,"Przeciwnik uciekł");
+                            strcpy(wiadomosc.message,"Zakanczanie gry");
                             wiadomosc.stat_n=5;
                             wiadomosc.erro_n=0;
                             stat=5;
+                            if(msgsnd(msgId,&wiadomosc,SIZE,0)<0){
+                                perror("exit_message");exit(1);}
+                            wiadomosc.type=whiteid;
                             if(msgsnd(msgId,&wiadomosc,SIZE,0)<0){
                                 perror("exit_message");exit(1);}
                             if(close(fi[0])<0){

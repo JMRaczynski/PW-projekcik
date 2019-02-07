@@ -17,23 +17,37 @@ struct msgbuf {
     long type;
     char message[1500];
     int erro_n, stat_n;
-};
+} odbior, wiadomosc;
+int msgId;
+pid_t pid;
+
+void catch_kill(int sig_num){
+    memset(wiadomosc.message,'\0', sizeof(wiadomosc.message));
+    strcpy(wiadomosc.message, "exit");
+    if(msgsnd(msgId, &wiadomosc, SIZE, 0)<0){
+        perror("catch_exit");exit(1);}
+}
 
 void obsluga_gry(struct msgbuf *wiadomosc, struct msgbuf *odbior, int msgId){
+    signal(SIGINT, catch_kill);
    do{
         memset(odbior->message,0,sizeof(odbior->message));
         if(msgrcv(msgId,odbior,SIZE,odbior->type,0)<0){
-            perror("odbior podczas gry"); exit(1);}
+            //perror("odbior podczas gry"); exit(1);
+            catch_kill(9);
+            continue;
+        }
         printf("%s\n",odbior->message);
 
         //printf("%d aa1\n",odbior->stat_n);
         if(odbior->stat_n==1){
+            signal(SIGINT, catch_kill);
             //printf("bb2\n");
             fgets(wiadomosc->message,6,stdin);
             memset(wiadomosc->message,'\0',sizeof(wiadomosc->message));
             fgets(wiadomosc->message,6,stdin);
             //printf("%s %ld\n",wiadomosc->message, sizeof(wiadomosc->message));
-            if(wiadomosc->message[0]=='e' && wiadomosc->message[1]=='x' && wiadomosc->message[2]=='i' && wiadomosc->message[3]=='t')odbior->stat_n=5;
+            //if(wiadomosc->message[0]=='e' && wiadomosc->message[1]=='x' && wiadomosc->message[2]=='i' && wiadomosc->message[3]=='t')odbior->stat_n=5;
             if(msgsnd(msgId,wiadomosc,SIZE,0)<0){
                 perror("odsylanie gra");exit(1);}
             //printf("cc3 w%ld, o%ld\n",wiadomosc->type,odbior->type);
@@ -43,8 +57,8 @@ void obsluga_gry(struct msgbuf *wiadomosc, struct msgbuf *odbior, int msgId){
 }
 
 int main() {
-    struct msgbuf odbior, wiadomosc;
-    int msgId, odbiorId, roomid, sharedMemoryIds[2], *usersOnline, *numberOfWaitingClients;
+    //struct msgbuf odbior, wiadomosc;
+    int odbiorId, roomid, sharedMemoryIds[2], *usersOnline, *numberOfWaitingClients;
     char login[20], password[20], option[2];
     long oldtype;
 
