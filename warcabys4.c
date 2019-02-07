@@ -172,7 +172,7 @@ int main() {
                     while(1) {
                         memset(wiadomosc.message, 0, strlen(wiadomosc.message));
                         strcpy(wiadomosc.message, MENU);
-                        printf("send_menu %ld\n",wiadomosc.type);
+                        //printf("send_menu %ld\n",wiadomosc.type);
                         if (msgsnd(msgId, &wiadomosc, SIZE, 0) == -1)
                         {
                             perror("Menu send server\n");
@@ -219,11 +219,13 @@ int main() {
 			    sscanf(odbior.message, "%d", &redid);
 			    printf("ID czerwonych: %d\nID bialych %d\nMOZNA ZACZYNAC GRE\n", redid, whiteid);
                    memset(wiadomosc.message,'\0',sizeof(wiadomosc.message));
-                   strcpy(wiadomosc.message, "START\n");
+                   strcpy(wiadomosc.message, "GRASZ BIALYMI\n");
                    wiadomosc.type = whiteid;
                    if(msgsnd(msgId, &wiadomosc, SIZE, 0)<0){
                     perror("poczatek_gry_biaey");exit(1);}
                    wiadomosc.type = redid;
+                   memset(wiadomosc.message,'\0',sizeof(wiadomosc.message));
+                   strcpy(wiadomosc.message, "GRASZ CZERWONYMI\n");
                    if(msgsnd(msgId, &wiadomosc, SIZE, 0)<0){
                     perror("poczatek_gry_czerwony");exit(1);}                   
                    if(pipe(fi)<0){
