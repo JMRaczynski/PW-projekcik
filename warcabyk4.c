@@ -158,18 +158,27 @@ int main() {
 	            perror("Player2 roomid send client\n");
 	            exit(1);
 	        }
-	    
-	    oldtype = wiadomosc.type;
-	    wiadomosc.type = roomid;
-	    memset(odbior.message, 0, strlen(odbior.message));
-	    if (msgrcv(msgId, &odbior, SIZE, odbior.type, 0) == -1) {
-	        perror("Game welcome message receive client\n");
-	        exit(1);
-	    }
-	    printf("%s\n", odbior.message);
-         obsluga_gry(&wiadomosc, &odbior, msgId);
-  //       printf("poza_funkcja\n");
-         wiadomosc.type = oldtype;
+		if (msgrcv(msgId, &odbior, SIZE, odbior.type, 0) == -1) {
+		  perror("Game welcome message receive client\n");
+		  exit(1);
+		}
+		if(odbior.message[0] == 'P'){
+		  printf("%s\n", odbior.message);
+		}
+		else{
+		
+		  oldtype = wiadomosc.type;
+		  wiadomosc.type = roomid;
+		  memset(odbior.message, 0, strlen(odbior.message));
+		  if (msgrcv(msgId, &odbior, SIZE, odbior.type, 0) == -1) {
+		    perror("Game welcome message receive client\n");
+		    exit(1);
+		  }
+		  printf("%s\n", odbior.message);
+		  obsluga_gry(&wiadomosc, &odbior, msgId);
+		  //       printf("poza_funkcja\n");
+		  wiadomosc.type = oldtype;
+		}
 	    }
 	    break;
 	    

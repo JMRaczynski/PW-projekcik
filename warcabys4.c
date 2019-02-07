@@ -22,6 +22,8 @@
 #define CHOOSE_ROOM "Wybierz pokoj, do ktorego chcesz dolaczyc\n"
 #define ROOM_MADE "Utworzono pokoj. Zaczekaj na dolaczenie kolejnego gracza. ID pokoju: "
 #define NO_GAME "Nikt nie utworzyl jeszcze pokoju. Wroc do menu i wybierz ponownie\n"
+#define BAD_ROOM "Pokoj o podanym numerze nie istnieje, zastanow sie co chcesz zrobic\n"
+#define GOOD_ROOM "Cokolwiek byle nie P na poczatku\n"
 #define SIZE sizeof(struct msgbuf)-sizeof(long)
 
 char (*logins)[20], (*passwords)[20];
@@ -386,7 +388,22 @@ int main() {
 			        //printf("%s\n", odbior.message);
 			        sscanf(odbior.message, "%d %d", &chosenid, &redid);
 			        //printf("chosenid %d %d\n", chosenid, redid);
-			      
+				if(odbior.message[0] == '-' || chosenid>=MAX_NUM_OF_USERS || numofplayers[chosenid] != 1){
+				  strcpy(wiadomosc.message, BAD_ROOM);
+				  if (msgsnd(msgId, &wiadomosc, SIZE, 0) == -1)//wysylanie listy pokoi
+			            {
+				      perror("Room list or back-to-menu  server\n");
+				      exit(1);
+			            }
+				}
+				else{
+				  strcpy(wiadomosc.message, GOOD_ROOM);
+				  if (msgsnd(msgId, &wiadomosc, SIZE, 0) == -1)//wysylanie listy pokoi
+			            {
+				      perror("Room list or back-to-menu  server\n");
+				      exit(1);
+			            } 
+				  
 			        numofplayers[chosenid] = 2;//wysylanie do procesu gry typu na jaki wysylac wiadomosci do czerwonych 
 			        //TA LINIJKA NIZEJ JEST WAZNA!!!!!!!!!PO ZAKONCZENIU GRY TRZEBA PRZYWROCIC OLDTYPE
 			        oldtype = wiadomosc.type;
@@ -405,6 +422,7 @@ int main() {
 			      //  printf("przed petla, chosenid %d\n",chosenid); 
 			        while(gamestates[chosenid] == 1){/*printf("%d ",gamestates[chosenid]);*/}//petla zawieszajaca proces na czas trwania gry w forku gracza1
                        wiadomosc.type = oldtype;
+			    }
 			    }
                   // printf("przed break\n");
                             break;
