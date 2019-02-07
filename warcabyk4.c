@@ -112,7 +112,7 @@ int main() {
     while (1) {
         memset(odbior.message, 0, strlen(odbior.message));
         memset(wiadomosc.message, 0, strlen(wiadomosc.message));
-        printf("menu_rec %ld\n",odbior.type);
+  //      printf("menu_rec %ld\n",odbior.type);
         if (msgrcv(odbiorId, &odbior, SIZE, odbior.type, 0) == -1) {
             perror("Menu receive client\n");
             exit(1);
@@ -126,7 +126,7 @@ int main() {
             exit(1);
         }
 	memset(odbior.message, 0, strlen(odbior.message));
-     printf("menu_feed %ld\n",odbior.type);
+//     printf("menu_feed %ld\n",odbior.type);
 	    if (msgrcv(msgId, &odbior, SIZE, odbior.type, 0) == -1) {
 	        perror("Menu feedback client\n");
 	        exit(1);
