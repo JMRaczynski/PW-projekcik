@@ -153,7 +153,7 @@ enum BOOL can_capture(enum FIELD_STATE board[8][9], int col, int row) { // Spraw
             }
             if (get_type(board, col, row) == KING) { // Jeśli figura jest królem, to może bić w tył
                 enemy_row = row - your_color; // Sprawdzamy opcję przeciwną do tej sprawdzonej dla zwykłego pionka
-                dest_row = row - your_color;
+                dest_row = row - 2*your_color;
                 if (is_enemy(board, enemy_col, enemy_row, your_color) && board[dest_col][dest_row] == FREE) {
                     //printf("Za pomoca %c%d mozesz zbic %c%d i wyladowac na %c%d\n", col+65, row, enemy_col+65, enemy_row, dest_col+65, dest_row);
                     return TRUE;
@@ -222,7 +222,7 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
     // Bicie
     else if (abs(where_col-from_col) == 2) { // Ruch od 2 pola w poziomie
         // Analogicznie jak przy zwykłym ruchu, jednak tym razem ruch o 2 pola
-        if (where_row-from_row == 2*row_direction || (get_type(board, from_col, from_row) == KING && where_row-from_row == -2*row_direction)) {
+        if (where_row-from_row == 2*row_direction) { // Dla piona
             // Sprawdzanie czy po drodze jest przeciwnik
             int enemy_col = from_col + (where_col > from_col ? 1:-1); // Położenie przeciwnika zależy od tego czy bijemy w prawo, czy w lewo
             int enemy_row = from_row + row_direction; // Bicie w górę lub w dół zależy od koloru gracza
@@ -250,30 +250,35 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
                 }
                 return NO_ERROR;
             }
-            else if (get_type(board, from_col, from_row) == KING) { // Dla króla jeszcze sprawdzenie w przeciwną stronę
-                enemy_row = from_row - row_direction;
-                if (is_enemy(board, enemy_col, enemy_row, current_player_color)) { // Między polem startowym, a docelowym jest przeciwnik
-                    board[where_col][where_row] = board[from_col][from_row];
-                    board[from_col][from_row] = FREE;
-                    board[enemy_col][enemy_row] = FREE;
-                    // Jeśli nie może więcej bić, oddaj turę
-                    if (can_capture(board, where_col, where_row) == FALSE) {
-                        if (*state == WHITE_TURN) *state = RED_TURN;
-                        else *state = WHITE_TURN;
-                    }
-                    else { // Jeśli jednak może coś zbić, zmuś gracza do użycia następnym razem tego samego pionka
-                        last_used_figure[0] = TRUE;
-                        last_used_figure[1] = where_col;
-                        last_used_figure[2] = where_row;
-                    }
-                    return NO_ERROR;
-                } else return ERROR_NO_ENEMY;
-            }
-            else return ERROR_MOVE_INCORRECT;
+        }
+        else if (get_type(board, from_col, from_row) == KING && (abs(where_row-from_row) == 2)) { // Dla króla jeszcze sprawdzenie w przeciwną stronę
+            int enemy_col = from_col + (where_col > from_col ? 1:-1); // Położenie przeciwnika zależy od tego czy bijemy w prawo, czy w lewo
+            int enemy_row;
+            if (from_row-where_row == 2) 
+                enemy_row = from_row - 1; // Ruch w górę
+            else
+                enemy_row = from_row + 1; // Ruch w dół
+            if (is_enemy(board, enemy_col, enemy_row, current_player_color)) { // Między polem startowym, a docelowym jest przeciwnik
+                board[where_col][where_row] = board[from_col][from_row];
+                board[from_col][from_row] = FREE;
+                board[enemy_col][enemy_row] = FREE;
+                // Jeśli nie może więcej bić, oddaj turę
+                if (can_capture(board, where_col, where_row) == FALSE) {
+                    if (*state == WHITE_TURN) *state = RED_TURN;
+                    else *state = WHITE_TURN;
+                }
+                else { // Jeśli jednak może coś zbić, zmuś gracza do użycia następnym razem tego samego pionka
+                    last_used_figure[0] = TRUE;
+                    last_used_figure[1] = where_col;
+                    last_used_figure[2] = where_row;
+                }
+                return NO_ERROR;
+            } else return ERROR_NO_ENEMY;
         }
         else return ERROR_MOVE_INCORRECT;
     }
     else return ERROR_MOVE_INCORRECT;
+return ERROR_MOVE_INCORRECT;
 }
   //TODO: Co jeśli obaj gracze się zablokują
 enum COLOR is_win(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Czy nastąpiło zwycięstwo, zwraca kolor zwycięzcy lub NO_COLOR
@@ -337,7 +342,7 @@ void test() {
     enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
     enum GAME_STATE state = NEW_GAME; // Aktualny stan gry
     int last_used_figure[3] = {0, 0, 0}; // Czy ostatio użyta figura musi być znowu użyta i gdzie znajduje się ona znajduje: przymus, kolumna, rząd
-    enum MOVE_ERROR move_error_no = 0;
+    enum MOVE_ERROR move_error_no = NO_ERROR;
     char board_string[1500];
     char error_message[50];
     new_game(board, &state);
