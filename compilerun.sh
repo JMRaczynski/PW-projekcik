@@ -1,8 +1,10 @@
 #!/bin/bash
+echo "Kompilowanie gry"
+gcc -Wall gra1.c -o gra1
 echo "Kompilowanie serwera"
-gcc -Wall warcabys2.c gra.c -o warcabys
+gcc -Wall warcabys4.c -o warcabys
 echo "Kompilowanie klienta"
-gcc -Wall warcabyk2.c -o warcabyk
+gcc -Wall warcabyk4.c -o warcabyk
 
 echo "Usuwanie kolejki komunikatow"
 ipcrm -Q 3
