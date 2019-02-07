@@ -43,9 +43,12 @@ void obsluga_gry(struct msgbuf *wiadomosc, struct msgbuf *odbior, int msgId){
         if(odbior->stat_n==1){
             signal(SIGINT, catch_kill);
             //printf("bb2\n");
-            fgets(wiadomosc->message,6,stdin);
+            char tmp_string[1500];
+            do {
+                fgets(tmp_string,1500,stdin);
+            }while(strlen(tmp_string) != 6);
             memset(wiadomosc->message,'\0',sizeof(wiadomosc->message));
-            fgets(wiadomosc->message,6,stdin);
+            strncpy(wiadomosc->message, tmp_string, 6);
             //printf("%s %ld\n",wiadomosc->message, sizeof(wiadomosc->message));
             //if(wiadomosc->message[0]=='e' && wiadomosc->message[1]=='x' && wiadomosc->message[2]=='i' && wiadomosc->message[3]=='t')odbior->stat_n=5;
             if(msgsnd(msgId,wiadomosc,SIZE,0)<0){
