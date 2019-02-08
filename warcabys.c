@@ -6,6 +6,7 @@
 #include<sys/wait.h>
 #include<sys/ipc.h>
 #include<sys/shm.h>
+#include<sys/sem.h>
 #include<stdlib.h>
 #include<sys/msg.h>
 #include<unistd.h>
@@ -35,6 +36,17 @@ struct msgbuf {
     int erro_n, stat_n;
 };
 
+static struct sembuf buf;
+
+void op(int semid, int num, int war){
+    buf.sem_num = num;
+    buf.sem_op = war;
+    buf.sem_flg = 0;
+
+    if(semop(semid, &buf, 1)<0){
+        perror("semop");exit(1);}
+}
+
 int checkIfLoginIsInBase(char* login) {
     for (int i = 0; i < MAX_NUM_OF_USERS; i++) {
         if (strcmp(login, logins[i]) == 0) return 1;
@@ -58,7 +70,7 @@ int checkIfPwIsCorrect(char* login, char* pw) {
 int main() {
     struct msgbuf wiadomosc, odbior;
     int types[MAX_NUM_OF_USERS * 2] = {0}, msgId, odbiorId, *usersOnline, sharedMemoryIds[7],
-        isLoginInBase, isPwCorrect, numofgames, whiteid, redid, chosenid, *numberOfWaitingClients, fi[2], fo[2];
+        isLoginInBase, isPwCorrect, numofgames, whiteid, redid, chosenid, *numberOfWaitingClients, fi[2], fo[2], semId;
     //int *numberOfWaitingClients;
     //int whiteid, redid, chosenid;
     unsigned int sharedMemorySizes[2] = {sizeof(int), MAX_NUM_OF_USERS * 40};
@@ -66,6 +78,9 @@ int main() {
     char roomid[5];
     //int numofgames;
     long oldtype;
+
+    if((semId = semget(KEY,MAX_NUM_OF_USERS,IPC_CREAT|0777))<0){
+        perror("semget");exit(1);}
     
     for (int i = 0; i < 4; i++) {
         if ((sharedMemoryIds[i] = shmget(KEY + i, sharedMemorySizes[i / 2], IPC_CREAT | 0777)) == -1) {
@@ -191,6 +206,7 @@ int main() {
                         case '1':
 			  
                             printf("Tworzenie gry\n");
+                            op(semId, odbior.type, 1);
 			    numofplayers[odbior.type] = 1;//wpisanie rekordu na pozycji nr ID - typ komunikatu wysylany na serwer
 			    gameids[odbior.type] = odbior.type;
 			    
@@ -199,14 +215,15 @@ int main() {
 			    strcpy(wiadomosc.message, ROOM_MADE);
 			    strcat(wiadomosc.message, roomid);
 			    strcat(wiadomosc.message, "\n");
+                   //printf("game welcom1\n");
 			    if (msgsnd(msgId, &wiadomosc, SIZE, 0) == -1)
 			        {
 				    perror("Room confirmation send server\n");
 			            exit(1);
 			        }
 			    
-			    while(numofplayers[odbior.type] == 1) //oczekiwanie na dolaczenie drugiego gracza
-			      {}
+			    //while(numofplayers[odbior.type] == 1) //oczekiwanie na dolaczenie drugiego gracza
+			    op(semId, odbior.type, -2);
 			    printf("%d\n", numofplayers[odbior.type]);
 			    
 			    
@@ -223,18 +240,20 @@ int main() {
                    memset(wiadomosc.message,'\0',sizeof(wiadomosc.message));
                    strcpy(wiadomosc.message, "GRASZ BIALYMI\n");
                    wiadomosc.type = whiteid;
+                   //printf("game welcome1\n");
                    if(msgsnd(msgId, &wiadomosc, SIZE, 0)<0){
                     perror("poczatek_gry_biaey");exit(1);}
                    wiadomosc.type = redid;
                    memset(wiadomosc.message,'\0',sizeof(wiadomosc.message));
                    strcpy(wiadomosc.message, "GRASZ CZERWONYMI\n");
+                   //printf("game welcome2\n");
                    if(msgsnd(msgId, &wiadomosc, SIZE, 0)<0){
                     perror("poczatek_gry_czerwony");exit(1);}                   
                    if(pipe(fi)<0){
                     perror("PIPE");exit(1);}
                    if(pipe(fo)<0){
                     perror("PIPE");exit(1);}
-                   int pid;
+                   int pid, akpid;
                    if(fork()==0){//proces gry
                    //    printf("gragra\n");
                     if(close(fi[0])<0){
@@ -248,7 +267,7 @@ int main() {
                     pid=getpid();
                     if(write(1,&pid,sizeof(int))<0){
                         perror("pid");exit(1);}
-                    execl("./gra","gra",NULL);
+                    execl("./gra1","gra",NULL);
                    }
                    else{//komunikacja z procesem gry
                      if(close(fi[1])<0){
@@ -312,12 +331,15 @@ int main() {
                         if(stat>=3)break; 
                         //odbior.type=whiteid+1;
                         if(msgrcv(msgId,&odbior,SIZE,odbior.type,0)<0){
+                            perror("odbiorPID");exit(1);}
+                        akpid = odbior.erro_n;
+                        if(msgrcv(msgId,&odbior,SIZE,odbior.type,0)<0){
                             perror("odbior ruchu");exit(1);}
                         //printf("%s\n",odbior.message);
                         if(odbior.message[0]=='e' &&odbior.message[1]=='x' && odbior.message[2]=='i' && odbior.message[3]=='t'){
                             
                                 wiadomosc.type=redid;
-                            
+                             kill(akpid, SIGABRT);                           
                             memset(wiadomosc.message,'\0',sizeof(wiadomosc.message));
                             strcpy(wiadomosc.message,"Zakanczanie gry");
                             wiadomosc.stat_n=5;
@@ -328,20 +350,27 @@ int main() {
                             wiadomosc.type=whiteid;
                             if(msgsnd(msgId,&wiadomosc,SIZE,0)<0){
                                 perror("exit_message");exit(1);}
+
                             if(close(fi[0])<0){
                                 perror("clos_in");exit(1);}
                             if(close(fo[1])<0){
                                 perror("clos_out");exit(1);}
+                            if(odbior.erro_n==10){
+                                if(msgrcv(msgId,&odbior,SIZE,odbior.type,0)<0){
+                                    perror("pom");exit(1);}
+                            }
 
                             kill(pid,9);
+                            break;
                         }else if(write(fo[1],odbior.message,6)<0){
                             perror("wysylanie przez dup2"); exit(1);}
                         //printf("ccc\n");
                    }while(stat<3);
                     wiadomosc.type = whiteid;
                    // printf("odb.type: %d\n",whiteid+1);
-                    gamestates[whiteid+1]=0;
-                    numofplayers[whiteid+1]=0;
+                    gamestates[odbior.type]=0;
+                    numofplayers[odbior.type]=0;
+                    op(semId, odbior.type, 1);
                    // printf("ddd\n");
                    }
 			    //sleep(5);
@@ -405,7 +434,7 @@ int main() {
 				      perror("Room list or back-to-menu  server\n");
 				      exit(1);
 			            } 
-				  
+				  op(semId, chosenid, 1);
 			        numofplayers[chosenid] = 2;//wysylanie do procesu gry typu na jaki wysylac wiadomosci do czerwonych 
 			        //TA LINIJKA NIZEJ JEST WAZNA!!!!!!!!!PO ZAKONCZENIU GRY TRZEBA PRZYWROCIC OLDTYPE
 			        oldtype = wiadomosc.type;
@@ -420,9 +449,10 @@ int main() {
 			            }
 			        sleep(1);
 			        printf("status gry widoczny z procesu dolaczajacego: %d\n", gamestates[chosenid]);
-			        sleep(10);
+			        sleep(1);
+                       op(semId, chosenid, -1);
 			      //  printf("przed petla, chosenid %d\n",chosenid); 
-			        while(gamestates[chosenid] == 1){/*printf("%d ",gamestates[chosenid]);*/}//petla zawieszajaca proces na czas trwania gry w forku gracza1
+			        //while(gamestates[chosenid] == 1){/*printf("%d ",gamestates[chosenid]);*/}//petla zawieszajaca proces na czas trwania gry w forku gracza1
                        wiadomosc.type = oldtype;
 			    }
 			    }

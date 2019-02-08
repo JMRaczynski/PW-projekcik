@@ -24,25 +24,34 @@ pid_t pid;
 void catch_kill(int sig_num){
     memset(wiadomosc.message,'\0', sizeof(wiadomosc.message));
     strcpy(wiadomosc.message, "exit");
+    if(odbior.stat_n==1)
+        wiadomosc.erro_n=10;
+    else wiadomosc.erro_n=0;
     if(msgsnd(msgId, &wiadomosc, SIZE, 0)<0){
         perror("catch_exit");exit(1);}
+//    if(pid!=0)kill(pid,SIGABRT);
 }
 
 void obsluga_gry(struct msgbuf *wiadomosc, struct msgbuf *odbior, int msgId){
     signal(SIGINT, catch_kill);
+    //char c;
    do{
         memset(odbior->message,0,sizeof(odbior->message));
         if(msgrcv(msgId,odbior,SIZE,odbior->type,0)<0){
             //perror("odbior podczas gry"); exit(1);
-            catch_kill(9);
+            //catch_kill(9);
             continue;
         }
         printf("%s\n",odbior->message);
 
         //printf("%d aa1\n",odbior->stat_n);
         if(odbior->stat_n==1){
-            signal(SIGINT, catch_kill);
+            //signal(SIGINT, catch_kill);
             //printf("bb2\n");
+        if((pid=fork())==0){
+            wiadomosc->erro_n = getpid();
+            if(msgsnd(msgId,wiadomosc, SIZE,0)<0){
+                perror("sendPID");exit(1);}
             char tmp_string[1500];
             do {
                 fgets(tmp_string,1500,stdin);
@@ -54,6 +63,13 @@ void obsluga_gry(struct msgbuf *wiadomosc, struct msgbuf *odbior, int msgId){
             if(msgsnd(msgId,wiadomosc,SIZE,0)<0){
                 perror("odsylanie gra");exit(1);}
             //printf("cc3 w%ld, o%ld\n",wiadomosc->type,odbior->type);
+            exit(0);
+            }
+            else{
+                wait(NULL);
+
+            }
+            pid=0;
         }
    }while(odbior->stat_n<3); 
    //printf("wyszedl\n");
@@ -129,7 +145,7 @@ int main() {
     while (1) {
         memset(odbior.message, 0, strlen(odbior.message));
         memset(wiadomosc.message, 0, strlen(wiadomosc.message));
-  //      printf("menu_rec %ld\n",odbior.type);
+        //printf("menu_recive %ld\n",odbior.type);
         if (msgrcv(odbiorId, &odbior, SIZE, odbior.type, 0) == -1) {
             perror("Menu receive client\n");
             exit(1);
@@ -143,7 +159,7 @@ int main() {
             exit(1);
         }
 	memset(odbior.message, 0, strlen(odbior.message));
-//     printf("menu_feed %ld\n",odbior.type);
+     //printf("menu_feedbavk %ld\n",odbior.type);
 	    if (msgrcv(msgId, &odbior, SIZE, odbior.type, 0) == -1) {
 	        perror("Menu feedback client\n");
 	        exit(1);
@@ -153,7 +169,7 @@ int main() {
 	switch(option[0])
 	{
 	case '1':
-	  
+	   //printf("game welcome1\n"); 
 	    memset(odbior.message, 0, strlen(odbior.message));
 	    if (msgrcv(msgId, &odbior, SIZE, odbior.type, 0) == -1) {
 	        perror("Game welcome receive player1\n");
@@ -175,6 +191,7 @@ int main() {
 	            perror("Player2 roomid send client\n");
 	            exit(1);
 	        }
+             //printf("game welcome2\n");
 		if (msgrcv(msgId, &odbior, SIZE, odbior.type, 0) == -1) {
 		  perror("Game welcome message receive client\n");
 		  exit(1);
@@ -187,13 +204,14 @@ int main() {
 		  oldtype = wiadomosc.type;
 		  wiadomosc.type = roomid;
 		  memset(odbior.message, 0, strlen(odbior.message));
+            //printf("game welcome3\n");
 		  if (msgrcv(msgId, &odbior, SIZE, odbior.type, 0) == -1) {
 		    perror("Game welcome message receive client\n");
 		    exit(1);
 		  }
 		  printf("%s\n", odbior.message);
 		  obsluga_gry(&wiadomosc, &odbior, msgId);
-		  //       printf("poza_funkcja\n");
+	//	         printf("poza_funkcja\n");
 		  wiadomosc.type = oldtype;
 		}
 	    }
@@ -205,6 +223,6 @@ int main() {
 	}    
     
         if (odbior.message[0] == 'W') break;
-//        printf("za break\n");
+       // printf("za break\n");
     }
 }
