@@ -82,7 +82,7 @@ void generate_board(enum FIELD_STATE board[8][9], enum GAME_STATE state, char *b
         sprintf(tmp_string, "%c   ", row);
         strcat(board_string, tmp_string);
     }
-    strcat(board_string, "\n");
+    strcat(board_string, "\n\0");
 }
 
 void generate_error_message(enum MOVE_ERROR move_error_no, char* message) { // Generuj wiadomość o błędzie
@@ -153,7 +153,7 @@ enum BOOL can_capture(enum FIELD_STATE board[8][9], int col, int row) { // Spraw
             }
             if (get_type(board, col, row) == KING) { // Jeśli figura jest królem, to może bić w tył
                 enemy_row = row - your_color; // Sprawdzamy opcję przeciwną do tej sprawdzonej dla zwykłego pionka
-                dest_row = row - your_color;
+                dest_row = row - 2*your_color;
                 if (is_enemy(board, enemy_col, enemy_row, your_color) && board[dest_col][dest_row] == FREE) {
                     //printf("Za pomoca %c%d mozesz zbic %c%d i wyladowac na %c%d\n", col+65, row, enemy_col+65, enemy_row, dest_col+65, dest_row);
                     return TRUE;
@@ -222,7 +222,7 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
     // Bicie
     else if (abs(where_col-from_col) == 2) { // Ruch od 2 pola w poziomie
         // Analogicznie jak przy zwykłym ruchu, jednak tym razem ruch o 2 pola
-        if (where_row-from_row == 2*row_direction || (get_type(board, from_col, from_row) == KING && where_row-from_row == -2*row_direction)) {
+        if (where_row-from_row == 2*row_direction) { // Dla piona
             // Sprawdzanie czy po drodze jest przeciwnik
             int enemy_col = from_col + (where_col > from_col ? 1:-1); // Położenie przeciwnika zależy od tego czy bijemy w prawo, czy w lewo
             int enemy_row = from_row + row_direction; // Bicie w górę lub w dół zależy od koloru gracza
@@ -250,30 +250,35 @@ enum MOVE_ERROR move(enum FIELD_STATE board[8][9], enum GAME_STATE *state, int l
                 }
                 return NO_ERROR;
             }
-            else if (get_type(board, from_col, from_row) == KING) { // Dla króla jeszcze sprawdzenie w przeciwną stronę
-                enemy_row = from_row - row_direction;
-                if (is_enemy(board, enemy_col, enemy_row, current_player_color)) { // Między polem startowym, a docelowym jest przeciwnik
-                    board[where_col][where_row] = board[from_col][from_row];
-                    board[from_col][from_row] = FREE;
-                    board[enemy_col][enemy_row] = FREE;
-                    // Jeśli nie może więcej bić, oddaj turę
-                    if (can_capture(board, where_col, where_row) == FALSE) {
-                        if (*state == WHITE_TURN) *state = RED_TURN;
-                        else *state = WHITE_TURN;
-                    }
-                    else { // Jeśli jednak może coś zbić, zmuś gracza do użycia następnym razem tego samego pionka
-                        last_used_figure[0] = TRUE;
-                        last_used_figure[1] = where_col;
-                        last_used_figure[2] = where_row;
-                    }
-                    return NO_ERROR;
-                } else return ERROR_NO_ENEMY;
-            }
-            else return ERROR_MOVE_INCORRECT;
+        }
+        else if (get_type(board, from_col, from_row) == KING && (abs(where_row-from_row) == 2)) { // Dla króla jeszcze sprawdzenie w przeciwną stronę
+            int enemy_col = from_col + (where_col > from_col ? 1:-1); // Położenie przeciwnika zależy od tego czy bijemy w prawo, czy w lewo
+            int enemy_row;
+            if (from_row-where_row == 2) 
+                enemy_row = from_row - 1; // Ruch w górę
+            else
+                enemy_row = from_row + 1; // Ruch w dół
+            if (is_enemy(board, enemy_col, enemy_row, current_player_color)) { // Między polem startowym, a docelowym jest przeciwnik
+                board[where_col][where_row] = board[from_col][from_row];
+                board[from_col][from_row] = FREE;
+                board[enemy_col][enemy_row] = FREE;
+                // Jeśli nie może więcej bić, oddaj turę
+                if (can_capture(board, where_col, where_row) == FALSE) {
+                    if (*state == WHITE_TURN) *state = RED_TURN;
+                    else *state = WHITE_TURN;
+                }
+                else { // Jeśli jednak może coś zbić, zmuś gracza do użycia następnym razem tego samego pionka
+                    last_used_figure[0] = TRUE;
+                    last_used_figure[1] = where_col;
+                    last_used_figure[2] = where_row;
+                }
+                return NO_ERROR;
+            } else return ERROR_NO_ENEMY;
         }
         else return ERROR_MOVE_INCORRECT;
     }
     else return ERROR_MOVE_INCORRECT;
+return ERROR_MOVE_INCORRECT;
 }
   //TODO: Co jeśli obaj gracze się zablokują
 enum COLOR is_win(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Czy nastąpiło zwycięstwo, zwraca kolor zwycięzcy lub NO_COLOR
@@ -310,8 +315,29 @@ enum COLOR is_win(enum FIELD_STATE board[8][9], enum GAME_STATE *state) { // Czy
         return NO_COLOR;
 }
 
-void test() {
-    // !!!Oczywiście, wszystko w main służy tylko do testów i ostatecznie przyjmie inną formę!!!
+void print(int a){
+    if(write(1,&a,sizeof(a))<0){
+        perror("write");exit(1);
+    }
+}
+void print_str(char tab[], int size){
+    if(write(1,tab,size)<0){
+        perror("write_str");exit(1);
+    }
+}
+void scan(char *tab, int size){
+    int i = 0,n;
+    char pom=0;
+    while((n=read(0,&pom,1))>0 && pom!='\n'){
+        if(i<size)tab[i++]=pom;
+        if( pom=='\n' || pom=='\0')break;
+    }
+    if(n<0){
+        perror("read");exit(1);
+    }
+}
+
+int main() {
     enum FIELD_STATE board[8][9] = {FREE}; // Tablilca przechowująca planszę do gry, rząd 0 jest pusta, żeby móc używać oznaczeń z normalnej planszy
     enum GAME_STATE state = NEW_GAME; // Aktualny stan gry
     int last_used_figure[3] = {0, 0, 0}; // Czy ostatio użyta figura musi być znowu użyta i gdzie znajduje się ona znajduje: przymus, kolumna, rząd
@@ -319,45 +345,42 @@ void test() {
     char board_string[1500];
     char error_message[50];
     new_game(board, &state);
-    /*
-    state = RED_TURN;
-    for (int col=A; col<=H; ++col)
-        for (int row=1; row<=8; ++row)
-            board[col][row] = FREE;
-    board[D][2] = RED_PAWN;
-    board[F][4] = RED_PAWN;
-    board[G][5] = WHITE_PAWN;
-    board[H][8] = WHITE_PAWN;*/
     generate_board(board, state, board_string);
-    printf("%s", board_string);
+    print(move_error_no);
+    print(state);
+    print(sizeof(board_string));
+    print_str(board_string, sizeof(board_string));
     while (1) {
         char input[6];
-        fgets(input, 6, stdin); // A1<spacja>B
+        scan(input,6);
         int from_col = (int)input[0]-65;
         int from_row = (int)input[1]-48;
         int where_col = (int)input[3]-65;
         int where_row = (int)input[4]-48;
         if (from_col>=A && from_col<=H  && from_row>=1 && from_row<=8 && where_col>=A && where_col<=H && where_row>=1 && where_row<=8) {
-            //printf("%c%d %c%d\n", from_col+65, from_row, where_col+65, where_row);
             move_error_no = move(board, &state, last_used_figure, from_col, from_row, where_col, where_row);
+            print(move_error_no);
             if (move_error_no == 0) {
                 is_win(board, &state);
                 generate_board(board, state, board_string);
-                printf("%s", board_string);
+                print(state);
+                print(sizeof(board_string));
+                print_str(board_string,sizeof(board_string));
             }
             else {
                 generate_error_message(move_error_no, error_message);
-                printf("%s", error_message);
+                print(state);
+                print(sizeof(error_message));
+                print_str(error_message, sizeof(error_message));
             }
         }
         else {
-            printf("Input error!, Używaj formatu A1<spacja>C2\n");
+            print(-1);
+            print(state);
+            print(sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
+            print_str("Input error!, Używaj formatu A1<spacja>C2\n", sizeof("Input error!, Używaj formatu A1<spacja>C2\n"));
         }
-        fgets(input, 6, stdin);
-    }
-}
 
-/*int main() {
-    test();
+    }
     return 0;
-}*/
+}
