@@ -8,6 +8,7 @@ gcc -Wall warcabyk.c -o warcabyk
 
 echo "Usuwanie kolejki komunikatow"
 ipcrm -Q 3
+ipcrm -M 5
 ipcrm -a
 echo "Starting tmux"
 tmux new-session -d -s "Warcaby" "./warcabys"
@@ -21,4 +22,4 @@ tmux split-window -v -t 0 "./warcabyk"
 sleep 0.3
 tmux split-window -v -t 0 "./warcabyk"
 tmux attach-session -d -t "Warcaby"
-ipcrm -M 5
+ipcrm -a

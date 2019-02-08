@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 	setbuf(stdout, NULL);
 	if (signal(SIGINT, sig_handler) == SIG_ERR) printf("\ncan't catch SIGINT\n");
 	int server_fifo;
-	long i = 0;
+	// long i = 0;
 	char nick[128];
 
 	msgid = msgget(IPC_PRIVATE, IPC_CREAT|IPC_EXCL|0600);
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 			{
 				printf("\nPodaj nick: ");
 				fflush(stdout);
-				scanf("%s", &nick);
+				scanf("%s", nick);
 				sprintf(wyslij.tresc, "nick %s\n",nick);
 				//printf("\n%s",wyslij.tresc);
 				fflush(stdout);
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 					fflush(stdout);
 					printf("\nPodaj nick: ");
 					fflush(stdout);
-					scanf("%s", &nick);
+					scanf("%s", nick);
 					sprintf(wyslij.tresc,"nick %s\n", nick);
 					msgsnd(msgid,&wyslij,sizeof(wyslij)-sizeof(wyslij.mtype),wyslij.mtype);
 					msgrcv(msgid,&odbierz,sizeof(odbierz),ANSWER,0);
