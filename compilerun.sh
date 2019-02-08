@@ -8,6 +8,7 @@ gcc -Wall warcabyk.c -o warcabyk
 
 echo "Usuwanie kolejki komunikatow"
 ipcrm -Q 3
+ipcrm -a
 echo "Starting tmux"
 tmux new-session -d -s "Warcaby" "./warcabys"
 tmux set -g mouse on
